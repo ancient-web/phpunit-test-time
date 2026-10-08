@@ -1,0 +1,7 @@
+/tests            export-ignore
+/phpunit.xml.dist export-ignore
+/phpunit.xml      export-ignore
+/Dockerfile       export-ignore
+/compose.yaml     export-ignore
+/.dockerignore    export-ignore
+/AGENTS.md        export-ignore

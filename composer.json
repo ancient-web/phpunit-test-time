@@ -2,7 +2,7 @@
     "name": "ancient-web/phpunit-test-time",
     "description": "PHPUnit extension that measures per-test execution time and writes a report sorted by duration",
     "type": "library",
-    "license": "proprietary",
+    "license": "MIT",
     "keywords": [
         "phpunit",
         "extension",
