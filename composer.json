@@ -1,0 +1,34 @@
+{
+    "name": "ancient-web/phpunit-test-time",
+    "description": "PHPUnit extension that measures per-test execution time and writes a report sorted by duration",
+    "type": "library",
+    "license": "proprietary",
+    "keywords": [
+        "phpunit",
+        "extension",
+        "testing",
+        "performance",
+        "paratest"
+    ],
+    "require": {
+        "php": "^8.4",
+        "phpunit/phpunit": "^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "AncientWeb\\PhpUnitTestTime\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AncientWeb\\PhpUnitTestTime\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable"
+}

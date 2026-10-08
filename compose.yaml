@@ -1,0 +1,15 @@
+services:
+  tests:
+    build:
+      context: .
+    image: ancient-web/phpunit-test-time
+    working_dir: /app
+    # Source is live-mounted; vendor comes from the image via the named volume,
+    # so the working copy's vendor/ is never shadowed or overwritten.
+    volumes:
+      - .:/app
+      - vendor:/app/vendor
+    command: ["vendor/bin/phpunit"]
+
+volumes:
+  vendor:
