@@ -5,3 +5,4 @@
 /compose.yaml     export-ignore
 /.dockerignore    export-ignore
 /AGENTS.md        export-ignore
+/RELEASE_NOTES.md export-ignore
