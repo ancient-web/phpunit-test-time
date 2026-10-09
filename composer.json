@@ -10,6 +10,11 @@
         "performance",
         "paratest"
     ],
+    "homepage": "https://github.com/ancient-web/phpunit-test-time",
+    "support": {
+        "issues": "https://github.com/ancient-web/phpunit-test-time/issues",
+        "source": "https://github.com/ancient-web/phpunit-test-time"
+    },
     "require": {
         "php": "^8.4",
         "ext-mbstring": "*",

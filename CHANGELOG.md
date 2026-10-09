@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-09
+
 ### Added
 
 - Console report (enabled by default, showing only tests at or above `console-minimum-duration`)
@@ -14,10 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parameters `console`, `console-minimum-duration`, `console-count`, `log`, `log-minimum-duration`,
   and `log-count`.
 - Per-test maximum duration via the `MaximumDuration` attribute and the `@maximumDuration` /
-  `@slowThreshold` annotations.
+  `@slowThreshold` annotations; the per-test minimum is carried through the paratest merge.
 - `console-maximum-width` parameter to truncate the console report to the terminal width.
 - Machine-readable (JSON) paratest worker logs and a JSON accumulator, replacing the
   report-parsing merge.
+- End-to-end tests that run the real extension in a separate PHPUnit process.
 - Static analysis with PHPStan (level max) and the strict, deprecation, and PHPUnit rules.
 - Coding standards enforced with PHP-CS-Fixer.
 - Automated refactoring with Rector.
@@ -30,8 +33,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Support `phpunit/phpunit` 10 through 13 (previously only 13).
-- Configure the extension exclusively through `phpunit.xml` `<parameter>` elements; the
-  `MEASURE_TIME` and `MEASURE_TIME_LOG` environment variables were removed.
+- Configure the extension exclusively through `phpunit.xml` `<parameter>` elements.
+- Discover paratest worker logs by scanning the report directory instead of using `glob()`, so
+  paths containing glob metacharacters (`[`, `*`) work.
+
+### Removed
+
+- The `MEASURE_TIME` and `MEASURE_TIME_LOG` environment variables.
 
 ## [1.0.0]
 
@@ -45,5 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parallel runs via paratest: each worker writes its own intermediate log; all logs are
   merged into a single report under an exclusive lock, keeping the maximum duration per test.
 
-[Unreleased]: https://github.com/ancient-web/phpunit-test-time/compare/1.0.0...HEAD
+[Unreleased]: https://github.com/ancient-web/phpunit-test-time/compare/2.0.0...HEAD
+[2.0.0]: https://github.com/ancient-web/phpunit-test-time/compare/1.0.0...2.0.0
 [1.0.0]: https://github.com/ancient-web/phpunit-test-time/releases/tag/1.0.0
