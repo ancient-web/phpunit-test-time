@@ -41,7 +41,8 @@ docker compose run --rm tests composer rector      # automated refactoring (Rect
   the paratest token, wires the reporters, and registers 6 event subscribers.
 - `src/Settings.php` — parses the `phpunit.xml` `<parameter>` elements into typed settings.
 - `src/Report.php` — prepares durations for output (minimum duration, maximum count, sorting,
-  rendering the human table).
+  truncation, rendering the human table).
+- `src/Terminal.php` — detects the terminal width from `COLUMNS` for `console-maximum-width=max`.
 - `src/Reporter.php` + `src/ConsoleReporter.php` + `src/TestTimeReportWriter.php` — the console
   reporter and the (merging) file reporter.
 - `src/Subscriber/*` — thin adapters translating PHPUnit test lifecycle events

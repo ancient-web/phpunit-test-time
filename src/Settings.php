@@ -21,6 +21,7 @@ final readonly class Settings
      * @param bool $console Whether to print the report to the console
      * @param int $consoleMinimumDuration Console minimum duration in milliseconds
      * @param int $consoleCount Maximum number of tests in the console report (0 = unlimited)
+     * @param int $consoleMaximumWidth Console maximum width in columns (0 = no truncation)
      * @param bool $log Whether to write the file log
      * @param string $logPath Path to the file log
      * @param int $logMinimumDuration File log minimum duration in milliseconds
@@ -30,6 +31,7 @@ final readonly class Settings
         public bool $console = true,
         public int $consoleMinimumDuration = 500,
         public int $consoleCount = 0,
+        public int $consoleMaximumWidth = 0,
         public bool $log = true,
         public string $logPath = '',
         public int $logMinimumDuration = 0,
@@ -47,6 +49,7 @@ final readonly class Settings
             console: self::boolean($parameters, 'console', true),
             consoleMinimumDuration: self::integer($parameters, 'console-minimum-duration', 500),
             consoleCount: self::integer($parameters, 'console-count', 0),
+            consoleMaximumWidth: self::width($parameters, 'console-maximum-width'),
             log: self::boolean($parameters, 'log', true),
             logPath: self::string($parameters, 'log-file', self::defaultLogPath()),
             logMinimumDuration: self::integer($parameters, 'log-minimum-duration', 0),
@@ -94,6 +97,31 @@ final readonly class Settings
         }
 
         $value = $parameters->get($name);
+
+        if (1 !== preg_match('/^\d+$/', $value)) {
+            throw InvalidParameter::notANonNegativeInteger($name, $value);
+        }
+
+        return (int) $value;
+    }
+
+    /**
+     * Read a width parameter: a non-negative integer or "max" for the terminal width.
+     *
+     * @param ParameterCollection $parameters Extension parameters
+     * @param string $name Parameter name
+     */
+    private static function width(ParameterCollection $parameters, string $name): int
+    {
+        if (!$parameters->has($name)) {
+            return 0;
+        }
+
+        $value = $parameters->get($name);
+
+        if ('max' === $value) {
+            return Terminal::width();
+        }
 
         if (1 !== preg_match('/^\d+$/', $value)) {
             throw InvalidParameter::notANonNegativeInteger($name, $value);

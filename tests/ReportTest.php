@@ -7,6 +7,10 @@ namespace AncientWeb\PhpUnitTestTime\Tests;
 use AncientWeb\PhpUnitTestTime\Report;
 use DateTimeImmutable;
 
+use function explode;
+use function mb_strlen;
+use function trim;
+
 /**
  * Tests for preparing and rendering the report.
  *
@@ -78,5 +82,23 @@ final class ReportTest extends AbstractTestCase
         ;
 
         $this->assertSame(1, $report->count());
+    }
+
+    /**
+     * Long identifiers are truncated in the middle to fit the width.
+     */
+    public function testTruncatesLongIdentifiers(): void
+    {
+        $id = 'AncientWeb\PhpUnitTestTime\Tests\SomeVeryLongTestClassName::testSomethingLong';
+
+        $report = Report::fromDurations([$id => 1.0]);
+
+        $text = $report->toText('Title', new DateTimeImmutable('2026-01-01 12:00:00'), 60);
+
+        $this->assertStringContainsString('...', $text);
+
+        foreach (explode(PHP_EOL, trim($text)) as $line) {
+            $this->assertLessThanOrEqual(60, mb_strlen($line));
+        }
     }
 }

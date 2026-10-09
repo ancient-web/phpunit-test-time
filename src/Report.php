@@ -10,6 +10,9 @@ use function array_slice;
 use function array_sum;
 use function count;
 use function implode;
+use function intdiv;
+use function mb_strlen;
+use function mb_substr;
 use function sprintf;
 use function uasort;
 
@@ -110,8 +113,9 @@ final readonly class Report
      *
      * @param string $title Report title
      * @param DateTimeImmutable $generatedAt Generation time
+     * @param int $maximumWidth Maximum width in columns (0 = no truncation)
      */
-    public function toText(string $title, DateTimeImmutable $generatedAt): string
+    public function toText(string $title, DateTimeImmutable $generatedAt, int $maximumWidth = 0): string
     {
         $lines = [
             sprintf('%s (%s)', $title, $generatedAt->format('Y-m-d H:i:s')),
@@ -122,11 +126,35 @@ final readonly class Report
         $position = 1;
 
         foreach ($this->sortedDescending() as $id => $duration) {
-            $lines[] = sprintf('%6d. %10.4f s  %s', $position, $duration, $id);
+            $prefix = sprintf('%6d. %10.4f s  ', $position, $duration);
+
+            $lines[] = $prefix.$this->truncate($id, $maximumWidth - mb_strlen($prefix));
 
             ++$position;
         }
 
         return implode(PHP_EOL, $lines).PHP_EOL;
+    }
+
+    /**
+     * Truncate a test identifier in the middle to fit the given length.
+     *
+     * @param string $text Test identifier
+     * @param int $maximumLength Maximum length (0 = no truncation)
+     */
+    private function truncate(string $text, int $maximumLength): string
+    {
+        if ($maximumLength <= 0 || mb_strlen($text) <= $maximumLength) {
+            return $text;
+        }
+
+        if ($maximumLength <= 3) {
+            return mb_substr($text, 0, $maximumLength);
+        }
+
+        $half = intdiv($maximumLength - 3, 2);
+        $tailLength = $maximumLength - 3 - $half;
+
+        return mb_substr($text, 0, $half).'...'.($tailLength > 0 ? mb_substr($text, -$tailLength) : '');
     }
 }

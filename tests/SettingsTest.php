@@ -18,6 +18,26 @@ use PHPUnit\Runner\Extension\ParameterCollection;
 final class SettingsTest extends AbstractTestCase
 {
     /**
+     * Clear the terminal environment.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        putenv('COLUMNS');
+    }
+
+    /**
+     * Clear the terminal environment.
+     */
+    protected function tearDown(): void
+    {
+        putenv('COLUMNS');
+
+        parent::tearDown();
+    }
+
+    /**
      * The defaults match the documented configuration.
      */
     public function testDefaults(): void
@@ -75,5 +95,30 @@ final class SettingsTest extends AbstractTestCase
         $this->expectException(InvalidParameter::class);
 
         Settings::fromParameters(ParameterCollection::fromArray(['console-count' => '-1']));
+    }
+
+    /**
+     * The console maximum width accepts an integer or "max".
+     */
+    public function testReadsConsoleMaximumWidth(): void
+    {
+        $this->assertSame(
+            100,
+            Settings::fromParameters(ParameterCollection::fromArray(['console-maximum-width' => '100']))->consoleMaximumWidth,
+        );
+
+        putenv('COLUMNS=120');
+
+        $this->assertSame(
+            120,
+            Settings::fromParameters(ParameterCollection::fromArray(['console-maximum-width' => 'max']))->consoleMaximumWidth,
+        );
+
+        putenv('COLUMNS');
+
+        $this->assertSame(
+            80,
+            Settings::fromParameters(ParameterCollection::fromArray(['console-maximum-width' => 'max']))->consoleMaximumWidth,
+        );
     }
 }

@@ -18,11 +18,13 @@ final readonly class ConsoleReporter implements Reporter
      * @param Configuration $configuration PHPUnit configuration
      * @param int $minimumDuration Minimum duration in milliseconds
      * @param int $maximumCount Maximum number of tests (0 = unlimited)
+     * @param int $maximumWidth Maximum width in columns (0 = no truncation)
      */
     public function __construct(
         private Configuration $configuration,
         private int $minimumDuration,
         private int $maximumCount,
+        private int $maximumWidth,
     ) {}
 
     /**
@@ -47,6 +49,6 @@ final readonly class ConsoleReporter implements Reporter
 
         $stream = $this->configuration->outputToStandardErrorStream() ? STDERR : STDOUT;
 
-        fwrite($stream, PHP_EOL.$report->toText('Test execution time report', new DateTimeImmutable()));
+        fwrite($stream, PHP_EOL.$report->toText('Test execution time report', new DateTimeImmutable(), $this->maximumWidth));
     }
 }

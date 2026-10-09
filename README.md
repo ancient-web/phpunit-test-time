@@ -34,6 +34,7 @@ All settings are `<parameter>` elements. Durations are in milliseconds; `0` mean
 | `console` | bool | `true` | print the report to the console |
 | `console-minimum-duration` | int | `500` | console shows only tests at or above this duration |
 | `console-count` | int | `0` | maximum number of tests in the console report |
+| `console-maximum-width` | int / `max` | `0` | truncate console lines to this width (`0` = no truncation, `max` = detected terminal width) |
 | `log` | bool | `true` | write the file log |
 | `log-file` | string | `var/test-time.log` | path to the file log |
 | `log-minimum-duration` | int | `0` | file log threshold (by default everything is written) |

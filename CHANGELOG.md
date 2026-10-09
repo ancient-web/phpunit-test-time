@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `log-count`.
 - Per-test maximum duration via the `MaximumDuration` attribute and the `@maximumDuration` /
   `@slowThreshold` annotations.
+- `console-maximum-width` parameter to truncate the console report to the terminal width.
 - Machine-readable (JSON) paratest worker logs and a JSON accumulator, replacing the
   report-parsing merge.
 - Static analysis with PHPStan (level max) and the strict, deprecation, and PHPUnit rules.

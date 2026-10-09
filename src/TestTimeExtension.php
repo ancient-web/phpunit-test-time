@@ -65,6 +65,7 @@ final class TestTimeExtension implements Extension
                 $configuration,
                 $settings->consoleMinimumDuration,
                 $settings->consoleCount,
+                $settings->consoleMaximumWidth,
             );
         }
 
