@@ -41,11 +41,18 @@
         "cs:check": "php-cs-fixer fix --config=.php-cs-fixer.php --dry-run --diff",
         "rector": "rector process --config=rector.php",
         "rector:check": "rector process --config=rector.php --dry-run",
+        "coverage": "phpunit --coverage-text --coverage-clover=.build/coverage/clover.xml",
+        "phar": "php -d phar.readonly=0 bin/build-phar.php",
         "it": [
             "@cs:check",
             "@stan",
             "@rector:check",
             "@test"
+        ],
+        "ci": [
+            "@it",
+            "@coverage",
+            "composer audit --no-interaction"
         ]
     },
     "config": {

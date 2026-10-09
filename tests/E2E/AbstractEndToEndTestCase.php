@@ -90,24 +90,20 @@ abstract class AbstractEndToEndTestCase extends AbstractTestCase
      */
     protected function startProcess(string $configPath, array $environment = [], array $arguments = []): array
     {
-        $descriptors = [
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ];
+        return $this->startCommand($this->command($configPath, $arguments), $environment);
+    }
 
-        $process = proc_open(
-            $this->command($configPath, $arguments),
-            $descriptors,
-            $pipes,
-            $this->directory,
-            $this->environment($environment),
-        );
-
-        if (!is_resource($process)) {
-            throw new RuntimeException('Unable to start PHPUnit');
-        }
-
-        return ['process' => $process, 'stdout' => $pipes[1], 'stderr' => $pipes[2]];
+    /**
+     * Run a command to completion and collect its output.
+     *
+     * @param list<string> $command Command and arguments
+     * @param array<string, string> $environment Additional environment variables
+     *
+     * @return array{exitCode: int, output: string, error: string}
+     */
+    protected function runCommand(array $command, array $environment = []): array
+    {
+        return $this->finish($this->startCommand($command, $environment));
     }
 
     /**
@@ -130,6 +126,36 @@ abstract class AbstractEndToEndTestCase extends AbstractTestCase
             'output' => $output,
             'error' => $error,
         ];
+    }
+
+    /**
+     * Start any command without waiting for it to finish.
+     *
+     * @param list<string> $command Command and arguments
+     * @param array<string, string> $environment Additional environment variables
+     *
+     * @return array{process: resource, stdout: resource, stderr: resource}
+     */
+    private function startCommand(array $command, array $environment): array
+    {
+        $descriptors = [
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ];
+
+        $process = proc_open(
+            $command,
+            $descriptors,
+            $pipes,
+            $this->directory,
+            $this->environment($environment),
+        );
+
+        if (!is_resource($process)) {
+            throw new RuntimeException('Unable to start a child process');
+        }
+
+        return ['process' => $process, 'stdout' => $pipes[1], 'stderr' => $pipes[2]];
     }
 
     /**

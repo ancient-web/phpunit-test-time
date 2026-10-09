@@ -3,6 +3,7 @@
 /var/
 /composer.lock
 /.build/
+/build/
 /.phpunit.cache/
 /.phpunit.result.cache
 /.php-cs-fixer.cache
