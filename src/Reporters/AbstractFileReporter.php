@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AncientWeb\PhpUnitTestTime;
+namespace AncientWeb\PhpUnitTestTime\Reporters;
 
 use AncientWeb\PhpUnitTestTime\Exception\ReportWriteFailed;
-use DateTimeImmutable;
+use AncientWeb\PhpUnitTestTime\Reporter;
+use AncientWeb\PhpUnitTestTime\TestTime;
 
 use function array_merge;
 use function basename;
@@ -38,7 +39,7 @@ use function unlink;
  * worker logs are merged into a JSON accumulator under an exclusive lock, from
  * which the human-readable report is rendered; the worker logs are then removed
  */
-final readonly class TestTimeReportWriter implements Reporter
+abstract readonly class AbstractFileReporter implements Reporter
 {
     /**
      * Flags used to encode the machine-readable logs.
@@ -47,15 +48,11 @@ final readonly class TestTimeReportWriter implements Reporter
 
     /**
      * @param string $reportPath Path to the shared report file
-     * @param int $minimumDuration Minimum duration in milliseconds
-     * @param int $maximumCount Maximum number of tests (0 = unlimited)
      * @param null|string $token Worker token, or null when not running in paratest
      */
     public function __construct(
-        private string $reportPath,
-        private int $minimumDuration = 0,
-        private int $maximumCount = 0,
-        private ?string $token = null,
+        protected string $reportPath,
+        protected ?string $token = null,
     ) {}
 
     /**
@@ -95,6 +92,104 @@ final readonly class TestTimeReportWriter implements Reporter
 
         $this->merge();
     }
+
+    /**
+     * Create a directory if it does not exist.
+     *
+     * @param string $directory Directory path
+     */
+    protected function ensureDirectory(string $directory): void
+    {
+        if (is_dir($directory)) {
+            return;
+        }
+
+        if (!mkdir($directory, 0o777, true) && !is_dir($directory)) {
+            throw ReportWriteFailed::directory($directory);
+        }
+    }
+
+    /**
+     * Write a machine-readable log.
+     *
+     * @param string $path Log file path
+     * @param array<string, TestTime> $testTimes Test times keyed by test identifier
+     */
+    protected function writeJson(string $path, array $testTimes): void
+    {
+        $this->ensureDirectory(dirname($path));
+
+        $data = [];
+
+        foreach ($testTimes as $id => $testTime) {
+            $data[$id] = [
+                'duration' => $testTime->seconds,
+                'minimum' => $testTime->minimumMilliseconds,
+            ];
+        }
+
+        $json = json_encode($data, self::JSON_FLAGS);
+
+        if (false === $json) {
+            throw ReportWriteFailed::write($path);
+        }
+
+        if (false === file_put_contents($path, $json)) {
+            throw ReportWriteFailed::write($path);
+        }
+    }
+
+    /**
+     * Read a machine-readable log.
+     *
+     * @param string $path Log file path
+     *
+     * @return array<string, TestTime>
+     */
+    protected function readJson(string $path): array
+    {
+        $contents = @file_get_contents($path);
+
+        if (false === $contents || '' === $contents) {
+            return [];
+        }
+
+        $decoded = json_decode($contents, true);
+
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $testTimes = [];
+
+        foreach ($decoded as $id => $entry) {
+            if (!is_string($id) || !is_array($entry)) {
+                continue;
+            }
+
+            $duration = $entry['duration'] ?? null;
+
+            if (!is_numeric($duration)) {
+                continue;
+            }
+
+            $minimum = $entry['minimum'] ?? null;
+
+            $testTimes[$id] = new TestTime(
+                (float) $duration,
+                is_numeric($minimum) ? (int) $minimum : null,
+            );
+        }
+
+        return $testTimes;
+    }
+
+    /**
+     * Write the human-readable report, filtered by the configured threshold and count.
+     *
+     * @param array<string, TestTime> $testTimes Test times keyed by test identifier
+     */
+    abstract protected function writeReport(array $testTimes): void;
 
     /**
      * Merge all worker logs into the accumulator and render the shared report.
@@ -246,117 +341,5 @@ final readonly class TestTimeReportWriter implements Reporter
         }
 
         return $this->reportPath;
-    }
-
-    /**
-     * Create a directory if it does not exist.
-     *
-     * @param string $directory Directory path
-     */
-    private function ensureDirectory(string $directory): void
-    {
-        if (is_dir($directory)) {
-            return;
-        }
-
-        if (!mkdir($directory, 0o777, true) && !is_dir($directory)) {
-            throw ReportWriteFailed::directory($directory);
-        }
-    }
-
-    /**
-     * Write a machine-readable log.
-     *
-     * @param string $path Log file path
-     * @param array<string, TestTime> $testTimes Test times keyed by test identifier
-     */
-    private function writeJson(string $path, array $testTimes): void
-    {
-        $this->ensureDirectory(dirname($path));
-
-        $data = [];
-
-        foreach ($testTimes as $id => $testTime) {
-            $data[$id] = [
-                'duration' => $testTime->seconds,
-                'minimum' => $testTime->minimumMilliseconds,
-            ];
-        }
-
-        $json = json_encode($data, self::JSON_FLAGS);
-
-        if (false === $json) {
-            throw ReportWriteFailed::write($path);
-        }
-
-        if (false === file_put_contents($path, $json)) {
-            throw ReportWriteFailed::write($path);
-        }
-    }
-
-    /**
-     * Read a machine-readable log.
-     *
-     * @param string $path Log file path
-     *
-     * @return array<string, TestTime>
-     */
-    private function readJson(string $path): array
-    {
-        $contents = @file_get_contents($path);
-
-        if (false === $contents || '' === $contents) {
-            return [];
-        }
-
-        $decoded = json_decode($contents, true);
-
-        if (!is_array($decoded)) {
-            return [];
-        }
-
-        $testTimes = [];
-
-        foreach ($decoded as $id => $entry) {
-            if (!is_string($id) || !is_array($entry)) {
-                continue;
-            }
-
-            $duration = $entry['duration'] ?? null;
-
-            if (!is_numeric($duration)) {
-                continue;
-            }
-
-            $minimum = $entry['minimum'] ?? null;
-
-            $testTimes[$id] = new TestTime(
-                (float) $duration,
-                is_numeric($minimum) ? (int) $minimum : null,
-            );
-        }
-
-        return $testTimes;
-    }
-
-    /**
-     * Write the human-readable report, filtered by the configured threshold and count.
-     *
-     * @param array<string, TestTime> $testTimes Test times keyed by test identifier
-     */
-    private function writeReport(array $testTimes): void
-    {
-        $report = Report::fromTestTimes($testTimes)
-            ->withMinimumDuration($this->minimumDuration)
-            ->withMaximumCount($this->maximumCount)
-        ;
-
-        $this->ensureDirectory(dirname($this->reportPath));
-
-        $contents = $report->toText('Test execution time report', new DateTimeImmutable());
-
-        if (false === file_put_contents($this->reportPath, $contents)) {
-            throw ReportWriteFailed::write($this->reportPath);
-        }
     }
 }

@@ -127,6 +127,32 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
     }
 
     /**
+     * The file report is written and filtered by the log minimum duration.
+     */
+    public function testWritesTheCsvReport(): void
+    {
+        $path = $this->directory.'/test-time.csv';
+
+        $result = $this->runExtension(
+            [
+                'console' => 'false',
+                'csv' => 'true',
+                'csv-file' => $path,
+                'csv-minimum-duration' => '500',
+            ],
+            ['SlowAndFastTest.php' => $this->slowAndFastTest()],
+        );
+
+        $this->assertSame(0, $result['exitCode'], $result['error']);
+        $this->assertFileExists($path);
+
+        $contents = (string) file_get_contents($path);
+
+        $this->assertStringContainsString('testSlowTest', $contents);
+        $this->assertStringNotContainsString('testFastTest', $contents);
+    }
+
+    /**
      * A per-test maximum duration overrides the console minimum duration.
      */
     public function testPerTestMaximumDurationOverridesTheConsoleMinimum(): void

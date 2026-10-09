@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace AncientWeb\PhpUnitTestTime;
 
+use AncientWeb\PhpUnitTestTime\Reporters\ConsoleReporter;
+use AncientWeb\PhpUnitTestTime\Reporters\CsvReporter;
+use AncientWeb\PhpUnitTestTime\Reporters\LogReporter;
 use AncientWeb\PhpUnitTestTime\Subscriber\TestTimeExecutionAbortedSubscriber;
 use AncientWeb\PhpUnitTestTime\Subscriber\TestTimeExecutionFinishedSubscriber;
 use AncientWeb\PhpUnitTestTime\Subscriber\TestTimeFinishedSubscriber;
@@ -72,11 +75,24 @@ final class TestTimeExtension implements Extension
         $reporters = [];
 
         if ($settings->log) {
-            $reportWriter = new TestTimeReportWriter(
+            $reportWriter = new LogReporter(
                 $settings->logPath,
+                $token,
                 $settings->logMinimumDuration,
                 $settings->logCount,
+            );
+
+            $reportWriter->reset();
+
+            $reporters[] = $reportWriter;
+        }
+
+        if ($settings->csv) {
+            $reportWriter = new CsvReporter(
+                $settings->csvPath,
                 $token,
+                $settings->csvMinimumDuration,
+                $settings->csvCount,
             );
 
             $reportWriter->reset();

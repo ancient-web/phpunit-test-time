@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AncientWeb\PhpUnitTestTime;
+namespace AncientWeb\PhpUnitTestTime\Reporters;
 
+use AncientWeb\PhpUnitTestTime\Report;
+use AncientWeb\PhpUnitTestTime\Reporter;
+use AncientWeb\PhpUnitTestTime\TestTime;
 use DateTimeImmutable;
 use PHPUnit\TextUI\Configuration\Configuration;
 

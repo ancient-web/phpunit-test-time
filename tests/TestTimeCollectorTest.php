@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AncientWeb\PhpUnitTestTime\Tests;
 
+use AncientWeb\PhpUnitTestTime\Reporters\LogReporter;
 use AncientWeb\PhpUnitTestTime\TestTimeCollector;
-use AncientWeb\PhpUnitTestTime\TestTimeReportWriter;
 use PHPUnit\Event\Telemetry\HRTime;
 
 use function file_get_contents;
@@ -21,7 +21,7 @@ final class TestTimeCollectorTest extends AbstractTestCase
     public function testFinishComputesDurationFromStartTime(): void
     {
         $path = $this->directory.'/test-time.log';
-        $collector = new TestTimeCollector(new TestTimeReportWriter($path));
+        $collector = new TestTimeCollector(new LogReporter($path));
         $testId = 'App\Tests\DemoTest::testSomething';
 
         $collector->start($testId, HRTime::fromSecondsAndNanoseconds(1, 0));
@@ -40,7 +40,7 @@ final class TestTimeCollectorTest extends AbstractTestCase
     public function testIgnoresFinishWithoutStart(): void
     {
         $path = $this->directory.'/test-time.log';
-        $collector = new TestTimeCollector(new TestTimeReportWriter($path));
+        $collector = new TestTimeCollector(new LogReporter($path));
 
         $collector->finish('orphan-test', HRTime::fromSecondsAndNanoseconds(5, 0));
         $collector->writeReport();
@@ -54,7 +54,7 @@ final class TestTimeCollectorTest extends AbstractTestCase
     public function testWritesReportOnlyOnce(): void
     {
         $path = $this->directory.'/test-time.log';
-        $collector = new TestTimeCollector(new TestTimeReportWriter($path));
+        $collector = new TestTimeCollector(new LogReporter($path));
 
         $collector->start('first-test', HRTime::fromSecondsAndNanoseconds(1, 0));
         $collector->finish('first-test', HRTime::fromSecondsAndNanoseconds(2, 0));

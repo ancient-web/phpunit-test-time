@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AncientWeb\PhpUnitTestTime\Tests;
 
+use AncientWeb\PhpUnitTestTime\Reporters\LogReporter;
 use AncientWeb\PhpUnitTestTime\TestTime;
-use AncientWeb\PhpUnitTestTime\TestTimeReportWriter;
 
 use function file_get_contents;
 use function file_put_contents;
@@ -26,7 +26,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/test-time.log';
 
-        new TestTimeReportWriter($path)->report([
+        new LogReporter($path)->report([
             'fast-test' => new TestTime(0.5),
             'slow-test' => new TestTime(2.5),
             'medium-test' => new TestTime(1.5),
@@ -54,7 +54,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/test-time.log';
 
-        new TestTimeReportWriter($path, 500)->report([
+        new LogReporter($path, null, 500)->report([
             'fast-test' => new TestTime(0.1),
             'slow-test' => new TestTime(1.0),
         ]);
@@ -72,7 +72,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/test-time.log';
 
-        new TestTimeReportWriter($path, 0, 1)->report([
+        new LogReporter($path, null, 0, 1)->report([
             'fast-test' => new TestTime(0.1),
             'slow-test' => new TestTime(1.0),
         ]);
@@ -90,8 +90,8 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/test-time.log';
 
-        new TestTimeReportWriter($path, 0, 0, 'worker-1')->report(['shared-test' => new TestTime(1.0)]);
-        new TestTimeReportWriter($path, 0, 0, 'worker-2')->report(['shared-test' => new TestTime(3.0)]);
+        new LogReporter($path, 'worker-1', 0, 0)->report(['shared-test' => new TestTime(1.0)]);
+        new LogReporter($path, 'worker-2', 0, 0)->report(['shared-test' => new TestTime(3.0)]);
 
         $contents = (string) file_get_contents($path);
 
@@ -108,7 +108,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/test-time.log';
 
-        new TestTimeReportWriter($path, 500, 0, 'worker-1')->report([
+        new LogReporter($path, 'worker-1', 500, 0)->report([
             'allowed-test' => new TestTime(1.0, 2000),
             'slow-test' => new TestTime(0.6),
         ]);
@@ -126,8 +126,8 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/test-time.log';
 
-        new TestTimeReportWriter($path, 500, 0, 'worker-1')->report(['shared-test' => new TestTime(1.0)]);
-        new TestTimeReportWriter($path, 500, 0, 'worker-2')->report(['shared-test' => new TestTime(1.0, 2000)]);
+        new LogReporter($path, 'worker-1', 500, 0)->report(['shared-test' => new TestTime(1.0)]);
+        new LogReporter($path, 'worker-2', 500, 0)->report(['shared-test' => new TestTime(1.0, 2000)]);
 
         $contents = (string) file_get_contents($path);
 
@@ -141,7 +141,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/re[port]*.log';
 
-        new TestTimeReportWriter($path, 0, 0, 'worker-1')->report(['some-test' => new TestTime(1.0)]);
+        new LogReporter($path, 'worker-1', 0, 0)->report(['some-test' => new TestTime(1.0)]);
 
         $contents = (string) file_get_contents($path);
 
@@ -157,7 +157,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/test-time.log';
 
-        new TestTimeReportWriter($path, 0, 0, 'worker-1')->report(['shared-test' => new TestTime(1.0)]);
+        new LogReporter($path, 'worker-1', 0, 0)->report(['shared-test' => new TestTime(1.0)]);
 
         $accumulator = $this->directory.'/test-time.json';
 
@@ -175,7 +175,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/test-time.log';
 
-        new TestTimeReportWriter($path, 0, 0, 'worker-1')->report(['shared-test' => new TestTime(1.0, 2000)]);
+        new LogReporter($path, 'worker-1', 0, 0)->report(['shared-test' => new TestTime(1.0, 2000)]);
 
         $accumulator = $this->directory.'/test-time.json';
 
@@ -206,7 +206,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
         file_put_contents($freshPath, '{}');
         touch($freshPath, time() + 3600);
 
-        new TestTimeReportWriter($path)->reset();
+        new LogReporter($path)->reset();
 
         $this->assertFileDoesNotExist($path);
         $this->assertFileDoesNotExist($accumulatorPath);
@@ -221,7 +221,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/nested/deeper/test-time.log';
 
-        new TestTimeReportWriter($path)->report(['some-test' => new TestTime(1.0)]);
+        new LogReporter($path)->report(['some-test' => new TestTime(1.0)]);
 
         $this->assertFileExists($path);
     }
@@ -233,7 +233,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/test-time.log';
 
-        new TestTimeReportWriter($path, 0, 0, 'weird/token:1')->report(['some-test' => new TestTime(1.0)]);
+        new LogReporter($path, 'weird/token:1', 0, 0)->report(['some-test' => new TestTime(1.0)]);
 
         $this->assertFileExists($path);
         $this->assertStringContainsString('some-test', (string) file_get_contents($path));
