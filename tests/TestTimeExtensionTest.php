@@ -47,7 +47,7 @@ final class TestTimeExtensionTest extends AbstractTestCase
     {
         $subscribers = new TestTimeExtension()->subscribers(
             $this->configuration(),
-            ParameterCollection::fromArray(['log-file' => $this->directory.'/test-time.log']),
+            ParameterCollection::fromArray([]),
         );
 
         // PreparationErrored was introduced in PHPUnit 12.
@@ -80,7 +80,7 @@ final class TestTimeExtensionTest extends AbstractTestCase
 
         new TestTimeExtension()->subscribers(
             $this->configuration(),
-            ParameterCollection::fromArray(['log-file' => $path]),
+            ParameterCollection::fromArray(['log' => 'true', 'log-file' => $path]),
         );
 
         $this->assertFileDoesNotExist($path);

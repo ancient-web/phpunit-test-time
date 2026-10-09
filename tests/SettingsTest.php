@@ -42,8 +42,8 @@ final class SettingsTest extends AbstractTestCase
 
         $this->assertTrue($settings->console);
         $this->assertSame(500, $settings->consoleMinimumDuration);
-        $this->assertSame(0, $settings->consoleCount);
-        $this->assertTrue($settings->log);
+        $this->assertSame(10, $settings->consoleCount);
+        $this->assertFalse($settings->log);
         $this->assertStringEndsWith('/var/test-time.log', $settings->logPath);
         $this->assertSame(0, $settings->logMinimumDuration);
         $this->assertSame(0, $settings->logCount);

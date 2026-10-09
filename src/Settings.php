@@ -30,9 +30,9 @@ final readonly class Settings
     public function __construct(
         public bool $console = true,
         public int $consoleMinimumDuration = 500,
-        public int $consoleCount = 0,
+        public int $consoleCount = 10,
         public int $consoleMaximumWidth = 0,
-        public bool $log = true,
+        public bool $log = false,
         public string $logPath = '',
         public int $logMinimumDuration = 0,
         public int $logCount = 0,
@@ -48,9 +48,9 @@ final readonly class Settings
         return new self(
             console: self::boolean($parameters, 'console', true),
             consoleMinimumDuration: self::integer($parameters, 'console-minimum-duration', 500),
-            consoleCount: self::integer($parameters, 'console-count', 0),
+            consoleCount: self::integer($parameters, 'console-count', 10),
             consoleMaximumWidth: self::width($parameters, 'console-maximum-width'),
-            log: self::boolean($parameters, 'log', true),
+            log: self::boolean($parameters, 'log', false),
             logPath: self::string($parameters, 'log-file', self::defaultLogPath()),
             logMinimumDuration: self::integer($parameters, 'log-minimum-duration', 0),
             logCount: self::integer($parameters, 'log-count', 0),
