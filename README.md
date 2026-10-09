@@ -37,16 +37,21 @@ Register the extension in `phpunit.xml.dist`:
 
 All settings are `<parameter>` elements. Durations are in milliseconds; `0` means “no limit”.
 
-| Parameter | Type | Default | Description |
-| --- | --- | --- | --- |
-| `console` | bool | `true` | print the report to the console |
-| `console-minimum-duration` | int | `500` | console shows only tests at or above this duration |
-| `console-count` | int | `10` | maximum number of tests in the console report |
-| `console-maximum-width` | int / `max` | `0` | truncate console lines to this width (`0` = no truncation, `max` = detected terminal width) |
-| `log` | bool | `false` | write the file log |
-| `log-file` | string | `var/test-time.log` | path to the file log |
-| `log-minimum-duration` | int | `0` | file log threshold (by default everything is written) |
-| `log-count` | int | `0` | maximum number of tests in the file log |
+| Parameter                  | Type        | Default             | Description                                                                           |
+|----------------------------|-------------|---------------------|---------------------------------------------------------------------------------------|
+| `console`                  | bool        | `true`              | print the report to the console                                                       |
+| `console-minimum-duration` | int         | `500`               | console shows only tests at or above this duration                                    |
+| `console-count`            | int         | `10`                | maximum number of tests in the console report                                         |
+| `console-maximum-width`    | int / `max` | `0`                 | truncate console lines to this width (`0` = no truncation, `max` = detected terminal width) |
+| `log`                      | bool        | `false`             | write the file log                                                                    |
+| `log-file`                 | string      | `var/test-time.log` | path to the file log                                                                  |
+| `log-minimum-duration`     | int         | `0`                 | file log threshold (by default everything is written)                                 |
+| `log-count`                | int         | `0`                 | maximum number of tests in the file log                                               |
+ `csv`                      | bool        | `false`             | write the csv                                                                         |
+| `csv-file`                 | string      | `var/test-time.csv` | path to the csv file                                                                  |
+| `csv-minimum-duration`     | int         | `0`                 | csv file threshold (by default everything is written)                                 |
+| `csv-count`                | int         | `0`                 | maximum number of tests in the csv file                                               |
+| `csv-separator`            | string      | `;`                 | csv separator for file, allowed: `,;\|:\t`                                            |
 
 For example, to report the ten slowest tests on the console and write everything to a file log:
 

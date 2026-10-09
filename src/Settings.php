@@ -36,6 +36,11 @@ final readonly class Settings
         public string $logPath = '',
         public int $logMinimumDuration = 0,
         public int $logCount = 0,
+        public bool $csv = false,
+        public string $csvPath = '',
+        public int $csvMinimumDuration = 0,
+        public int $csvCount = 0,
+        public string $csvSeparator = ';',
     ) {}
 
     /**
@@ -54,6 +59,11 @@ final readonly class Settings
             logPath: self::string($parameters, 'log-file', self::defaultLogPath()),
             logMinimumDuration: self::integer($parameters, 'log-minimum-duration', 0),
             logCount: self::integer($parameters, 'log-count', 0),
+            csv: self::boolean($parameters, 'csv', false),
+            csvPath: self::string($parameters, 'csv-file', self::defaultCsvPath()),
+            csvMinimumDuration: self::integer($parameters, 'csv-minimum-duration', 0),
+            csvCount: self::integer($parameters, 'csv-count', 0),
+            csvSeparator: self::string($parameters, 'csv-separator', ';'),
         );
     }
 
@@ -154,5 +164,15 @@ final readonly class Settings
         $directory = getcwd();
 
         return (false === $directory ? '.' : $directory).'/var/test-time.log';
+    }
+
+    /**
+     * The default csv path relative to the current working directory.
+     */
+    private static function defaultCsvPath(): string
+    {
+        $directory = getcwd();
+
+        return (false === $directory ? '.' : $directory).'/var/test-time.csv';
     }
 }
