@@ -89,6 +89,45 @@ final class ExtraSlowTest extends TestCase
 The override applies wherever a minimum duration is configured (the console and/or the
 file log); an output configured to show everything (`0`) is not affected.
 
+## Paratest
+
+Parallel runs with [`paratest`](https://github.com/paratestphp/paratest) are supported. Because
+every worker is a separate PHP process, the console report is skipped: the file log is the only
+output and is merged from all workers under an exclusive lock (for a test that ran in several
+workers the maximum duration is kept).
+
+The worker token is read from `TEST_TOKEN` (falling back to `UNIQUE_TEST_TOKEN`, then the process
+id when `PARATEST` is set). Point `log-file` at a shared path:
+
+```xml
+<extensions>
+    <bootstrap class="AncientWeb\PhpUnitTestTime\TestTimeExtension">
+        <parameter name="console" value="false" />
+        <parameter name="log-file" value="/tmp/test-time.log" />
+        <parameter name="log-minimum-duration" value="500" />
+    </bootstrap>
+</extensions>
+```
+
+Each worker writes `<base>.<token>.json`, the workers merge every worker log plus the
+`<base>.json` accumulator, render `<base>.log`, and remove the worker logs. A per-test
+`#[MaximumDuration]` resolved by one worker is carried through the merge, so it still filters the
+merged report.
+
+## Troubleshooting
+
+- **No console report.** The console only shows tests at or above `console-minimum-duration`
+  (default `500` ms); lower it to `0` to see everything. Under paratest the console report is
+  intentionally skipped, and PHPUnit's `--no-output` disables it too.
+- **No file log.** Check that `log` is not `false` and that `log-file` is writable (the default is
+  `getcwd()/var/test-time.log`; its directory is created automatically).
+- **A test is missing.** Its duration is below the output's minimum, it was cut off by
+  `console-count`/`log-count`, or a per-test `MaximumDuration` raised its own threshold. A
+  per-test override only applies to outputs whose minimum duration is non-zero.
+- **Invalid parameter.** `InvalidParameter` is thrown for a non-boolean `console`/`log`, a
+  non-negative-integer duration/count, or a `console-maximum-width` that is neither a
+  non-negative integer nor `max`.
+
 ## Report format
 
 ```
@@ -108,11 +147,25 @@ All commands run inside the container (no local PHP required):
 docker compose build                       # build the image (works offline)
 docker compose run --rm tests              # install dependencies and run the test suite
 docker compose run --rm tests composer it  # install dependencies and run the full pipeline
+docker compose run --rm tests composer coverage  # coverage (needs a pcov/xdebug driver)
+docker compose run --rm tests composer audit     # dependency advisories (needs network access)
+docker compose run --rm tests composer ci        # it + coverage + audit
+docker compose run --rm tests composer phar      # build a self-contained PHAR
 ```
 
 The quality pipeline runs coding standards (PHP-CS-Fixer), static analysis
-(PHPStan, level max), automated refactoring (Rector), and the test suite. See
+(PHPStan, level max), automated refactoring (Rector), and the test suite. `composer it`
+is offline-friendly; `composer coverage` needs a coverage driver (none is bundled), and
+`composer audit`/`composer ci` need network access. See
 [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
+
+`composer phar` builds `build/phpunit-test-time.phar`, a self-contained bundle whose stub
+registers an autoloader for the `AncientWeb\PhpUnitTestTime\` namespace. `require` it from your
+PHPUnit bootstrap if you cannot use Composer autoloading for this package:
+
+```php
+require __DIR__.'/phpunit-test-time.phar';
+```
 
 ## Credits
 

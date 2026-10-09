@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coding standards enforced with PHP-CS-Fixer.
 - Automated refactoring with Rector.
 - `composer` scripts for the quality pipeline.
+- Code coverage via the `coverage` script (requires a pcov or xdebug driver).
+- `composer audit` and a `ci` script that runs the pipeline plus coverage and audit.
+- A PHAR builder (`composer phar`) for self-contained distribution.
 - `CHANGELOG.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `SECURITY.md`.
 
 ### Changed

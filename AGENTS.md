@@ -34,6 +34,10 @@ docker compose run --rm tests composer cs          # fix coding standards (PHP-C
 docker compose run --rm tests composer cs:check    # check coding standards only
 docker compose run --rm tests composer stan        # static analysis (PHPStan, level max)
 docker compose run --rm tests composer rector      # automated refactoring (Rector)
+docker compose run --rm tests composer coverage    # coverage (requires a pcov/xdebug driver)
+docker compose run --rm tests composer audit       # dependency advisories (requires network)
+docker compose run --rm tests composer ci          # it + coverage + audit
+docker compose run --rm tests composer phar        # build the distributable PHAR
 ```
 
 ## Architecture
@@ -41,22 +45,27 @@ docker compose run --rm tests composer rector      # automated refactoring (Rect
 - `src/TestTimeExtension.php` — PHPUnit `Extension`; on `bootstrap()` parses `Settings`, resolves
   the paratest token, wires the reporters, and registers 6 event subscribers.
 - `src/Settings.php` — parses the `phpunit.xml` `<parameter>` elements into typed settings.
-- `src/Report.php` — prepares durations for output (minimum duration, maximum count, sorting,
-  truncation, rendering the human table).
+- `src/Report.php` — prepares test times for output (minimum duration, per-test override,
+  maximum count, sorting, truncation, rendering the human table).
+- `src/TestTime.php` — value object: a measured duration and an optional per-test minimum.
 - `src/Terminal.php` — detects the terminal width from `COLUMNS` for `console-maximum-width=max`.
 - `src/Reporter.php` + `src/ConsoleReporter.php` + `src/TestTimeReportWriter.php` — the console
   reporter and the (merging) file reporter.
 - `src/Subscriber/*` — thin adapters translating PHPUnit test lifecycle events
   (`PreparationStarted/Errored/Failed`, `Finished`, `ExecutionFinished/Aborted`) into
   `collector->start()/finish()/writeReport()`.
-- `src/TestTimeCollector.php` — maps test id → duration; `writeReport()` calls each reporter once.
+- `src/TestTimeCollector.php` — maps test id → `TestTime` (duration + per-test minimum);
+  `writeReport()` calls each reporter once.
 - `src/Exception/*` — `InvalidParameter` and `ReportWriteFailed`.
+- `tests/E2E/*` — end-to-end tests that spawn the real PHPUnit binary with a generated config
+  and generated test classes, exercising the whole extension.
 
 ## Behavior you must not break
 
-- **Two formats.** Worker logs and the shared accumulator are JSON (machine-readable); the human
-  report (`<base>.log`) is rendered from the accumulator. Merging never parses the human report,
-  so its line format can change freely.
+- **Two formats.** Worker logs and the shared accumulator are JSON (machine-readable); each
+  entry is `{"duration": <float>, "minimum": <int|null>}`. The human report (`<base>.log`) is
+  rendered from the accumulator. Merging never parses the human report, so its line format can
+  change freely.
 - **Paratest merging.** A worker token is resolved from `TEST_TOKEN`, then `UNIQUE_TEST_TOKEN`,
   then pid when `PARATEST` is set; otherwise there is no token and the human report is written
   directly. With a token, the worker writes `<base>.<token>.json`, then merges every
