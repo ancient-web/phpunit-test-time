@@ -135,6 +135,22 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     }
 
     /**
+     * Worker logs are found even when the path contains glob metacharacters.
+     */
+    public function testMergesWorkerReportsForPathsWithGlobCharacters(): void
+    {
+        $path = $this->directory.'/re[port]*.log';
+
+        new TestTimeReportWriter($path, 0, 0, 'worker-1')->report(['some-test' => new TestTime(1.0)]);
+
+        $contents = (string) file_get_contents($path);
+
+        $this->assertStringContainsString('some-test', $contents);
+        $this->assertFileExists($this->directory.'/re[port]*.json');
+        $this->assertFileDoesNotExist($this->directory.'/re[port]*.worker-1.json');
+    }
+
+    /**
      * The merged durations are kept in a machine-readable accumulator.
      */
     public function testWritesMachineReadableAccumulator(): void

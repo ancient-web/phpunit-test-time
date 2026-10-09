@@ -8,6 +8,7 @@ use AncientWeb\PhpUnitTestTime\Exception\ReportWriteFailed;
 use DateTimeImmutable;
 
 use function array_merge;
+use function basename;
 use function dirname;
 use function fclose;
 use function file_get_contents;
@@ -15,7 +16,6 @@ use function file_put_contents;
 use function filemtime;
 use function flock;
 use function fopen;
-use function glob;
 use function is_array;
 use function is_dir;
 use function is_numeric;
@@ -25,7 +25,9 @@ use function max;
 use function microtime;
 use function mkdir;
 use function preg_replace;
+use function scandir;
 use function str_ends_with;
+use function str_starts_with;
 use function substr;
 use function unlink;
 
@@ -183,14 +185,32 @@ final readonly class TestTimeReportWriter implements Reporter
     /**
      * Get the list of worker log files.
      *
+     * The directory is scanned directly instead of using glob(), so paths that
+     * contain glob metacharacters (such as `[` or `*`) keep working.
+     *
      * @return array<int, string>
      */
     private function workerPaths(): array
     {
-        $files = glob($this->basePath().'.*.json');
+        $directory = dirname($this->basePath());
+        $name = basename($this->basePath());
 
-        if (false === $files) {
+        $entries = @scandir($directory);
+
+        if (false === $entries) {
             return [];
+        }
+
+        $prefix = $name.'.';
+        $accumulator = $name.'.json';
+        $files = [];
+
+        foreach ($entries as $entry) {
+            if ($entry === $accumulator || !str_starts_with($entry, $prefix) || !str_ends_with($entry, '.json')) {
+                continue;
+            }
+
+            $files[] = $directory.'/'.$entry;
         }
 
         return $files;
