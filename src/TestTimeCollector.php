@@ -7,6 +7,8 @@ namespace AncientWeb\PhpUnitTestTime;
 use PHPUnit\Event\Code\Test;
 use PHPUnit\Event\Telemetry\HRTime;
 
+use function array_values;
+
 /**
  * Collects the execution duration of each test.
  */
@@ -28,9 +30,17 @@ final class TestTimeCollector
     private bool $written = false;
 
     /**
-     * @param TestTimeReportWriter $reportWriter Report writer
+     * @var array<int, Reporter>
      */
-    public function __construct(private readonly TestTimeReportWriter $reportWriter) {}
+    private readonly array $reporters;
+
+    /**
+     * @param Reporter ...$reporters Reporters to send the collected durations to
+     */
+    public function __construct(Reporter ...$reporters)
+    {
+        $this->reporters = array_values($reporters);
+    }
 
     /**
      * Record the start of a test.
@@ -73,6 +83,8 @@ final class TestTimeCollector
 
         $this->written = true;
 
-        $this->reportWriter->write($this->durations);
+        foreach ($this->reporters as $reporter) {
+            $reporter->report($this->durations);
+        }
     }
 }

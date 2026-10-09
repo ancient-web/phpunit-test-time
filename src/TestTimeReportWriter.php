@@ -8,8 +8,6 @@ use AncientWeb\PhpUnitTestTime\Exception\ReportWriteFailed;
 use DateTimeImmutable;
 
 use function array_merge;
-use function array_sum;
-use function count;
 use function dirname;
 use function fclose;
 use function file_get_contents;
@@ -17,10 +15,7 @@ use function file_put_contents;
 use function filemtime;
 use function flock;
 use function fopen;
-use function getenv;
-use function getmypid;
 use function glob;
-use function implode;
 use function is_array;
 use function is_dir;
 use function is_numeric;
@@ -29,20 +24,18 @@ use function json_encode;
 use function microtime;
 use function mkdir;
 use function preg_replace;
-use function sprintf;
 use function str_ends_with;
 use function substr;
-use function uasort;
 use function unlink;
 
 /**
- * Builds the test execution time report.
+ * Writes the test execution time report to a file.
  *
  * Each process records its durations as a JSON worker log. In paratest mode all
  * worker logs are merged into a JSON accumulator under an exclusive lock, from
  * which the human-readable report is rendered; the worker logs are then removed
  */
-final readonly class TestTimeReportWriter
+final readonly class TestTimeReportWriter implements Reporter
 {
     /**
      * Flags used to encode the machine-readable logs.
@@ -51,8 +44,16 @@ final readonly class TestTimeReportWriter
 
     /**
      * @param string $reportPath Path to the shared report file
+     * @param int $minimumDuration Minimum duration in milliseconds
+     * @param int $maximumCount Maximum number of tests (0 = unlimited)
+     * @param null|string $token Worker token, or null when not running in paratest
      */
-    public function __construct(private string $reportPath) {}
+    public function __construct(
+        private string $reportPath,
+        private int $minimumDuration = 0,
+        private int $maximumCount = 0,
+        private ?string $token = null,
+    ) {}
 
     /**
      * Remove reports from previous runs.
@@ -79,17 +80,15 @@ final readonly class TestTimeReportWriter
      *
      * @param array<string, float> $durations Test durations in seconds keyed by test identifier
      */
-    public function write(array $durations): void
+    public function report(array $durations): void
     {
-        $token = $this->resolveToken();
-
-        if (null === $token) {
-            $this->writeHumanReport($this->reportPath, $durations, 'Test execution time report');
+        if (null === $this->token) {
+            $this->writeReport($durations);
 
             return;
         }
 
-        $this->writeJson($this->workerPath($token), $durations);
+        $this->writeJson($this->workerPath($this->token), $durations);
 
         $this->merge();
     }
@@ -123,7 +122,7 @@ final readonly class TestTimeReportWriter
                 }
 
                 $this->writeJson($accumulatorPath, $merged);
-                $this->writeHumanReport($this->reportPath, $merged, 'Final test execution time report');
+                $this->writeReport($merged);
 
                 $this->removeWorkerLogs();
             } finally {
@@ -156,32 +155,6 @@ final readonly class TestTimeReportWriter
         foreach ($this->workerPaths() as $file) {
             @unlink($file);
         }
-    }
-
-    /**
-     * Resolve the current worker token.
-     *
-     * For paratest it is TEST_TOKEN, otherwise a unique worker token or the process pid
-     */
-    private function resolveToken(): ?string
-    {
-        $token = getenv('TEST_TOKEN');
-
-        if (false !== $token && '' !== $token) {
-            return $token;
-        }
-
-        $token = getenv('UNIQUE_TEST_TOKEN');
-
-        if (false !== $token && '' !== $token) {
-            return $token;
-        }
-
-        if (false !== getenv('PARATEST')) {
-            return (string) getmypid();
-        }
-
-        return null;
     }
 
     /**
@@ -317,34 +290,23 @@ final readonly class TestTimeReportWriter
     }
 
     /**
-     * Write the human-readable report sorted by duration descending.
+     * Write the human-readable report, filtered by the configured threshold and count.
      *
-     * @param string $path Report file path
      * @param array<string, float> $durations Test durations in seconds keyed by test identifier
-     * @param string $title Report title
      */
-    private function writeHumanReport(string $path, array $durations, string $title): void
+    private function writeReport(array $durations): void
     {
-        uasort($durations, static fn (float $first, float $second): int => $second <=> $first);
+        $report = Report::fromDurations($durations)
+            ->withMinimumDuration($this->minimumDuration)
+            ->withMaximumCount($this->maximumCount)
+        ;
 
-        $lines = [
-            sprintf('%s (%s)', $title, new DateTimeImmutable()->format('Y-m-d H:i:s')),
-            sprintf('Total tests: %d, total time: %.4f s', count($durations), array_sum($durations)),
-            '',
-        ];
+        $this->ensureDirectory(dirname($this->reportPath));
 
-        $position = 1;
+        $contents = $report->toText('Test execution time report', new DateTimeImmutable());
 
-        foreach ($durations as $id => $duration) {
-            $lines[] = sprintf('%6d. %10.4f s  %s', $position, $duration, $id);
-
-            ++$position;
-        }
-
-        $this->ensureDirectory(dirname($path));
-
-        if (false === file_put_contents($path, implode(PHP_EOL, $lines).PHP_EOL)) {
-            throw ReportWriteFailed::write($path);
+        if (false === file_put_contents($this->reportPath, $contents)) {
+            throw ReportWriteFailed::write($this->reportPath);
         }
     }
 }

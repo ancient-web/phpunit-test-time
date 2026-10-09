@@ -1,11 +1,13 @@
 # ancient-web/phpunit-test-time
 
 A PHPUnit extension that measures the execution time of each test and, at the end of the run,
-writes a report sorted by duration descending.
+reports the slowest ones. The report is printed to the console by default; a file log can be
+written as well.
 
 Parallel runs via `paratest` are supported: each worker writes its own intermediate log, then all
 logs are merged into a single report under an exclusive lock (for the same test the maximum
-duration is kept).
+duration is kept). In parallel runs only the file log is produced — the console report is skipped,
+because every worker is a separate process.
 
 ## Installation
 
@@ -23,39 +25,37 @@ Register the extension in `phpunit.xml.dist`:
 </extensions>
 ```
 
-## Enabling measurement
+## Configuration
 
-Measurement is disabled by default. Enable it with the `MEASURE_TIME` environment variable — any
-non-empty value except `0`:
+All settings are `<parameter>` elements. Durations are in milliseconds; `0` means “no limit”.
 
-```bash
-MEASURE_TIME=1 vendor/bin/phpunit
+| Parameter | Type | Default | Description |
+| --- | --- | --- | --- |
+| `console` | bool | `true` | print the report to the console |
+| `console-minimum-duration` | int | `500` | console shows only tests at or above this duration |
+| `console-count` | int | `0` | maximum number of tests in the console report |
+| `log` | bool | `true` | write the file log |
+| `log-file` | string | `var/test-time.log` | path to the file log |
+| `log-minimum-duration` | int | `0` | file log threshold (by default everything is written) |
+| `log-count` | int | `0` | maximum number of tests in the file log |
+
+For example, to show the ten slowest tests on the console, but everything in the file log:
+
+```xml
+<extensions>
+    <bootstrap class="AncientWeb\PhpUnitTestTime\TestTimeExtension">
+        <parameter name="console-count" value="10" />
+        <parameter name="log-file" value="/tmp/test-time.log" />
+    </bootstrap>
+</extensions>
 ```
 
-## Log path
-
-The path is resolved in the following order of priority:
-
-1. The `log-file` extension parameter:
-
-   ```xml
-   <bootstrap class="AncientWeb\PhpUnitTestTime\TestTimeExtension">
-       <parameter name="log-file" value="/tmp/test-time.log" />
-   </bootstrap>
-   ```
-
-2. The `MEASURE_TIME_LOG` environment variable:
-
-   ```bash
-   MEASURE_TIME=1 MEASURE_TIME_LOG=/tmp/test-time.log vendor/bin/phpunit
-   ```
-
-3. The default — `var/test-time.log` relative to the current working directory.
+The console report respects PHPUnit's `--no-output` flag and the `stderr` configuration.
 
 ## Report format
 
 ```
-Final test execution time report (2026-01-01 12:00:00)
+Test execution time report (2026-01-01 12:00:00)
 Total tests: 3, total time: 4.5000 s
 
      1.     2.5000 s  App\Tests\SlowTest::testSomething

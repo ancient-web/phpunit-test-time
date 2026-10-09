@@ -24,7 +24,7 @@ use function touch;
 final class TestTimeExtensionTest extends AbstractTestCase
 {
     /**
-     * Clear extension environment variables.
+     * Clear the worker environment variables.
      */
     protected function setUp(): void
     {
@@ -34,7 +34,7 @@ final class TestTimeExtensionTest extends AbstractTestCase
     }
 
     /**
-     * Clear extension environment variables.
+     * Clear the worker environment variables.
      */
     protected function tearDown(): void
     {
@@ -44,39 +44,11 @@ final class TestTimeExtensionTest extends AbstractTestCase
     }
 
     /**
-     * No subscribers are registered when measurement is disabled.
+     * Six subscribers are registered with the default settings.
      */
-    public function testDoesNotRegisterSubscribersWhenDisabled(): void
+    public function testRegistersSixSubscribersByDefault(): void
     {
-        $facade = $this->createFacadeRecorder();
-
-        new TestTimeExtension()->bootstrap($this->configuration(), $facade, ParameterCollection::fromArray([]));
-
-        $this->assertSame([], $facade->subscribers);
-    }
-
-    /**
-     * The MEASURE_TIME=0 value disables measurement.
-     */
-    public function testDoesNotRegisterSubscribersWhenDisabledWithZero(): void
-    {
-        putenv('MEASURE_TIME=0');
-
-        $facade = $this->createFacadeRecorder();
-
-        new TestTimeExtension()->bootstrap($this->configuration(), $facade, ParameterCollection::fromArray([]));
-
-        $this->assertSame([], $facade->subscribers);
-    }
-
-    /**
-     * Six subscribers are registered when measurement is enabled.
-     */
-    public function testRegistersSixSubscribersWhenEnabled(): void
-    {
-        putenv('MEASURE_TIME=1');
-
-        $facade = $this->createFacadeRecorder();
+        $facade = new FacadeStub();
 
         new TestTimeExtension()->bootstrap(
             $this->configuration(),
@@ -88,60 +60,55 @@ final class TestTimeExtensionTest extends AbstractTestCase
     }
 
     /**
-     * The report path is taken from the MEASURE_TIME_LOG environment variable.
+     * No subscribers are registered when both outputs are disabled.
      */
-    public function testReadsLogPathFromEnvironment(): void
+    public function testRegistersNoSubscribersWhenBothOutputsAreDisabled(): void
     {
-        putenv('MEASURE_TIME=1');
-
-        $path = $this->directory.'/env-test-time.log';
-        file_put_contents($path, 'stale');
-        touch($path, time() - 3600);
-
-        putenv('MEASURE_TIME_LOG='.$path);
+        $facade = new FacadeStub();
 
         new TestTimeExtension()->bootstrap(
             $this->configuration(),
-            $this->createFacadeRecorder(),
-            ParameterCollection::fromArray([]),
+            $facade,
+            ParameterCollection::fromArray(['console' => 'false', 'log' => 'false']),
+        );
+
+        $this->assertSame([], $facade->subscribers);
+    }
+
+    /**
+     * The log-file parameter is honored and stale reports are removed.
+     */
+    public function testRemovesStaleReportFromConfiguredLogFile(): void
+    {
+        $path = $this->directory.'/custom-test-time.log';
+        file_put_contents($path, 'stale');
+        touch($path, time() - 3600);
+
+        new TestTimeExtension()->bootstrap(
+            $this->configuration(),
+            new FacadeStub(),
+            ParameterCollection::fromArray(['log-file' => $path]),
         );
 
         $this->assertFileDoesNotExist($path);
     }
 
     /**
-     * The log-file parameter takes precedence over the environment variable.
+     * Stale reports are left untouched when logging is disabled.
      */
-    public function testLogFileParameterTakesPrecedenceOverEnvironment(): void
+    public function testDoesNotRemoveStaleReportWhenLoggingIsDisabled(): void
     {
-        putenv('MEASURE_TIME=1');
-
-        $envPath = $this->directory.'/env-test-time.log';
-        file_put_contents($envPath, 'stale-env');
-        touch($envPath, time() - 3600);
-
-        $parameterPath = $this->directory.'/parameter-test-time.log';
-        file_put_contents($parameterPath, 'stale-parameter');
-        touch($parameterPath, time() - 3600);
-
-        putenv('MEASURE_TIME_LOG='.$envPath);
+        $path = $this->directory.'/test-time.log';
+        file_put_contents($path, 'stale');
+        touch($path, time() - 3600);
 
         new TestTimeExtension()->bootstrap(
             $this->configuration(),
-            $this->createFacadeRecorder(),
-            ParameterCollection::fromArray(['log-file' => $parameterPath]),
+            new FacadeStub(),
+            ParameterCollection::fromArray(['console' => 'false', 'log' => 'false']),
         );
 
-        $this->assertFileDoesNotExist($parameterPath);
-        $this->assertFileExists($envPath);
-    }
-
-    /**
-     * Create a facade that remembers the registered subscribers.
-     */
-    private function createFacadeRecorder(): FacadeStub
-    {
-        return new FacadeStub();
+        $this->assertFileExists($path);
     }
 
     /**
@@ -153,18 +120,21 @@ final class TestTimeExtensionTest extends AbstractTestCase
     }
 
     /**
-     * Clear extension environment variables.
+     * Clear the worker environment variables.
      */
     private function clearEnvironment(): void
     {
-        putenv('MEASURE_TIME');
-        putenv('MEASURE_TIME_LOG');
+        putenv('TEST_TOKEN');
+        putenv('UNIQUE_TEST_TOKEN');
+        putenv('PARATEST');
 
         unset(
-            $_SERVER['MEASURE_TIME'],
-            $_ENV['MEASURE_TIME'],
-            $_SERVER['MEASURE_TIME_LOG'],
-            $_ENV['MEASURE_TIME_LOG'],
+            $_SERVER['TEST_TOKEN'],
+            $_ENV['TEST_TOKEN'],
+            $_SERVER['UNIQUE_TEST_TOKEN'],
+            $_ENV['UNIQUE_TEST_TOKEN'],
+            $_SERVER['PARATEST'],
+            $_ENV['PARATEST'],
         );
     }
 }

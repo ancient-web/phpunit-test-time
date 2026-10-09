@@ -9,11 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Console report (enabled by default, showing only tests at or above `console-minimum-duration`)
+  in addition to the optional file log.
+- Parameters `console`, `console-minimum-duration`, `console-count`, `log`, `log-minimum-duration`,
+  and `log-count`.
+- Machine-readable (JSON) paratest worker logs and a JSON accumulator, replacing the
+  report-parsing merge.
 - Static analysis with PHPStan (level max) and the strict, deprecation, and PHPUnit rules.
 - Coding standards enforced with PHP-CS-Fixer.
 - Automated refactoring with Rector.
 - `composer` scripts for the quality pipeline.
 - `CHANGELOG.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, and `SECURITY.md`.
+
+### Changed
+
+- Configure the extension exclusively through `phpunit.xml` `<parameter>` elements; the
+  `MEASURE_TIME` and `MEASURE_TIME_LOG` environment variables were removed.
 
 ## [1.0.0]
 

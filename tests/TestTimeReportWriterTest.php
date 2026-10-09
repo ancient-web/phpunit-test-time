@@ -23,37 +23,13 @@ use function touch;
 final class TestTimeReportWriterTest extends AbstractTestCase
 {
     /**
-     * Reset worker environment variables.
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        putenv('TEST_TOKEN');
-        putenv('UNIQUE_TEST_TOKEN');
-        putenv('PARATEST');
-    }
-
-    /**
-     * Reset worker environment variables.
-     */
-    protected function tearDown(): void
-    {
-        putenv('TEST_TOKEN');
-        putenv('UNIQUE_TEST_TOKEN');
-        putenv('PARATEST');
-
-        parent::tearDown();
-    }
-
-    /**
      * The report is sorted by test duration descending.
      */
     public function testWriteSortsDurationsInDescendingOrder(): void
     {
         $path = $this->directory.'/test-time.log';
 
-        new TestTimeReportWriter($path)->write([
+        new TestTimeReportWriter($path)->report([
             'fast-test' => 0.5,
             'slow-test' => 2.5,
             'medium-test' => 1.5,
@@ -75,17 +51,50 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     }
 
     /**
+     * Durations below the minimum are not written.
+     */
+    public function testFiltersByMinimumDuration(): void
+    {
+        $path = $this->directory.'/test-time.log';
+
+        new TestTimeReportWriter($path, 500)->report([
+            'fast-test' => 0.1,
+            'slow-test' => 1.0,
+        ]);
+
+        $contents = (string) file_get_contents($path);
+
+        $this->assertStringNotContainsString('fast-test', $contents);
+        $this->assertStringContainsString('slow-test', $contents);
+    }
+
+    /**
+     * Only the slowest tests are written.
+     */
+    public function testLimitsByMaximumCount(): void
+    {
+        $path = $this->directory.'/test-time.log';
+
+        new TestTimeReportWriter($path, 0, 1)->report([
+            'fast-test' => 0.1,
+            'slow-test' => 1.0,
+        ]);
+
+        $contents = (string) file_get_contents($path);
+
+        $this->assertStringNotContainsString('fast-test', $contents);
+        $this->assertStringContainsString('slow-test', $contents);
+    }
+
+    /**
      * Merging worker reports keeps the maximum test duration.
      */
     public function testMergeKeepsMaximumDurationAcrossWorkers(): void
     {
         $path = $this->directory.'/test-time.log';
 
-        putenv('TEST_TOKEN=worker-1');
-        new TestTimeReportWriter($path)->write(['shared-test' => 1.0]);
-
-        putenv('TEST_TOKEN=worker-2');
-        new TestTimeReportWriter($path)->write(['shared-test' => 3.0]);
+        new TestTimeReportWriter($path, 0, 0, 'worker-1')->report(['shared-test' => 1.0]);
+        new TestTimeReportWriter($path, 0, 0, 'worker-2')->report(['shared-test' => 3.0]);
 
         $contents = (string) file_get_contents($path);
 
@@ -102,8 +111,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/test-time.log';
 
-        putenv('TEST_TOKEN=worker-1');
-        new TestTimeReportWriter($path)->write(['shared-test' => 1.0]);
+        new TestTimeReportWriter($path, 0, 0, 'worker-1')->report(['shared-test' => 1.0]);
 
         $accumulator = $this->directory.'/test-time.json';
 
@@ -150,7 +158,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/nested/deeper/test-time.log';
 
-        new TestTimeReportWriter($path)->write(['some-test' => 1.0]);
+        new TestTimeReportWriter($path)->report(['some-test' => 1.0]);
 
         $this->assertFileExists($path);
     }
@@ -162,8 +170,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/test-time.log';
 
-        putenv('TEST_TOKEN=weird/token:1');
-        new TestTimeReportWriter($path)->write(['some-test' => 1.0]);
+        new TestTimeReportWriter($path, 0, 0, 'weird/token:1')->report(['some-test' => 1.0]);
 
         $this->assertFileExists($path);
         $this->assertStringContainsString('some-test', (string) file_get_contents($path));

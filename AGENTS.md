@@ -37,16 +37,18 @@ docker compose run --rm tests composer rector      # automated refactoring (Rect
 
 ## Architecture
 
-- `src/TestTimeExtension.php` — PHPUnit `Extension`; on `bootstrap()` checks the `Environment`,
-  then wires the collector and registers 6 event subscribers.
-- `src/Environment.php` — reads `MEASURE_TIME`/`MEASURE_TIME_LOG` from `getenv()`, then
-  `$_SERVER`/`$_ENV`.
+- `src/TestTimeExtension.php` — PHPUnit `Extension`; on `bootstrap()` parses `Settings`, resolves
+  the paratest token, wires the reporters, and registers 6 event subscribers.
+- `src/Settings.php` — parses the `phpunit.xml` `<parameter>` elements into typed settings.
+- `src/Report.php` — prepares durations for output (minimum duration, maximum count, sorting,
+  rendering the human table).
+- `src/Reporter.php` + `src/ConsoleReporter.php` + `src/TestTimeReportWriter.php` — the console
+  reporter and the (merging) file reporter.
 - `src/Subscriber/*` — thin adapters translating PHPUnit test lifecycle events
   (`PreparationStarted/Errored/Failed`, `Finished`, `ExecutionFinished/Aborted`) into
   `collector->start()/finish()/writeReport()`.
-- `src/TestTimeCollector.php` — maps test id → duration; `writeReport()` writes once.
-- `src/TestTimeReportWriter.php` — renders the human report and merges paratest worker logs.
-- `src/Exception/ReportWriteFailed.php` — thrown when the report cannot be written.
+- `src/TestTimeCollector.php` — maps test id → duration; `writeReport()` calls each reporter once.
+- `src/Exception/*` — `InvalidParameter` and `ReportWriteFailed`.
 
 ## Behavior you must not break
 
@@ -59,11 +61,17 @@ docker compose run --rm tests composer rector      # automated refactoring (Rect
   `<base>.*.json` worker log plus the `<base>.json` accumulator under `LOCK_EX`, keeping the
   **maximum** duration per test, writes the accumulator and `<base>.log`, and deletes the worker
   logs. Base path strips a trailing `.log`.
-- **Enable flag.** Measurement is off unless `MEASURE_TIME` is non-empty and not `0`.
-- **Env lookup is dual.** `getenv()` is tried first, then `$_SERVER`/`$_ENV`. Tests set values with
-  `putenv()` and must clear them in `setUp()/tearDown()` because the process is shared.
-- **Report path precedence:** `log-file` extension parameter → `MEASURE_TIME_LOG` env var →
-  `<getcwd()>/var/test-time.log` (the `var/` dir is gitignored).
+- **Configuration is parameter-only.** All settings come from `phpunit.xml` `<parameter>` elements
+  (`Settings::fromParameters`); there is no enable flag and no configuration environment variable.
+  Registering the extension is what enables it.
+- **Console vs file.** The console report is printed only when not in paratest (every worker is a
+  separate process) and respects PHPUnit's `noOutput()`/`outputToStandardErrorStream()`. The file
+  log is the only paratest output and merges all workers.
+- **Env is only for paratest.** `getenv()` is used solely to resolve the worker token
+  (`TEST_TOKEN`, then `UNIQUE_TEST_TOKEN`, then pid when `PARATEST` is set); tests clear these in
+  `setUp()/tearDown()` because the process is shared.
+- **Default log path:** the `log-file` parameter, otherwise `<getcwd()>/var/test-time.log` (the
+  `var/` dir is gitignored).
 - **`reset()` is mtime-aware.** It deletes stale report files whose mtime is older than
   `REQUEST_TIME_FLOAT` (not all files), so tests manipulate mtimes with `touch()`.
 

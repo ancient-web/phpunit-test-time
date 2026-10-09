@@ -16,20 +16,19 @@ use PHPUnit\Runner\Extension\Facade;
 use PHPUnit\Runner\Extension\ParameterCollection;
 use PHPUnit\TextUI\Configuration\Configuration;
 
-use function getcwd;
+use function getenv;
+use function getmypid;
 
 /**
  * PHPUnit extension that measures the execution time of each test.
  *
- * At the end of the run it writes a log sorted by test duration descending
+ * At the end of the run it prints a report to the console and, optionally,
+ * writes one to a file, both filtered by their own minimum duration and count
  *
- * In paratest mode each worker writes its own log under its token,
- * then all logs are merged into a shared file under a lock
+ * In paratest mode the console report is skipped (each worker is a separate
+ * process); the file log is merged from all workers under a lock
  *
- * Measurement is enabled by the MEASURE_TIME environment variable (any non-empty value except 0)
- *
- * The log path is set by the log-file extension parameter or the MEASURE_TIME_LOG
- * environment variable; by default var/test-time.log relative to the current working directory is used
+ * All settings are configured through phpunit.xml <parameter> elements
  */
 final class TestTimeExtension implements Extension
 {
@@ -43,16 +42,37 @@ final class TestTimeExtension implements Extension
     #[Override]
     public function bootstrap(Configuration $configuration, Facade $facade, ParameterCollection $parameters): void
     {
-        $environment = Environment::fromGlobals();
+        $settings = Settings::fromParameters($parameters);
+        $token = $this->resolveToken();
 
-        if (!$environment->isMeasurementEnabled()) {
+        $reporters = [];
+
+        if ($settings->log) {
+            $reportWriter = new TestTimeReportWriter(
+                $settings->logPath,
+                $settings->logMinimumDuration,
+                $settings->logCount,
+                $token,
+            );
+
+            $reportWriter->reset();
+
+            $reporters[] = $reportWriter;
+        }
+
+        if ($settings->console && null === $token) {
+            $reporters[] = new ConsoleReporter(
+                $configuration,
+                $settings->consoleMinimumDuration,
+                $settings->consoleCount,
+            );
+        }
+
+        if ([] === $reporters) {
             return;
         }
 
-        $reportWriter = new TestTimeReportWriter($this->resolveLogPath($parameters, $environment));
-        $reportWriter->reset();
-
-        $collector = new TestTimeCollector($reportWriter);
+        $collector = new TestTimeCollector(...$reporters);
 
         $facade->registerSubscribers(
             new TestTimePreparationStartedSubscriber($collector),
@@ -65,28 +85,26 @@ final class TestTimeExtension implements Extension
     }
 
     /**
-     * Resolve the report file path.
-     *
-     * Priority: the log-file parameter, then the MEASURE_TIME_LOG environment variable,
-     * then var/test-time.log relative to the current working directory
-     *
-     * @param ParameterCollection $parameters Extension parameters
-     * @param Environment $environment Process environment
+     * Resolve the current paratest worker token, or null when not in paratest.
      */
-    private function resolveLogPath(ParameterCollection $parameters, Environment $environment): string
+    private function resolveToken(): ?string
     {
-        if ($parameters->has('log-file')) {
-            return $parameters->get('log-file');
+        $token = getenv('TEST_TOKEN');
+
+        if (false !== $token && '' !== $token) {
+            return $token;
         }
 
-        $path = $environment->get('MEASURE_TIME_LOG');
+        $token = getenv('UNIQUE_TEST_TOKEN');
 
-        if (null !== $path) {
-            return $path;
+        if (false !== $token && '' !== $token) {
+            return $token;
         }
 
-        $directory = getcwd();
+        if (false !== getenv('PARATEST')) {
+            return (string) getmypid();
+        }
 
-        return (false === $directory ? '.' : $directory).'/var/test-time.log';
+        return null;
     }
 }
