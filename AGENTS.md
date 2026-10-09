@@ -1,7 +1,8 @@
 # AGENTS.md
 
 PHPUnit extension (library) that records per-test execution time and writes a report sorted
-by duration descending. Requires PHP `^8.4` and `phpunit/phpunit ^13.0`. This repo *is* the
+by duration descending. Requires PHP `^8.4` and `phpunit/phpunit ^10.0 || ^11.0 || ^12.0 || ^13.0`.
+This repo *is* the
 extension — it is registered in the config of the projects that consume it, not in this repo's
 own `phpunit.xml.dist`.
 
