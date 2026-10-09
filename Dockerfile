@@ -16,10 +16,10 @@ RUN set -eux; \
 
 WORKDIR /app
 
-# Install dependencies in a layer cached on the manifests alone.
-COPY composer.json composer.lock* ./
-RUN composer install --no-interaction --no-progress --no-scripts
+# Dependencies are installed at runtime by the entrypoint into the live-mounted
+# working copy, so the image stays small and can be built without network access.
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-COPY . .
-
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["vendor/bin/phpunit"]

@@ -4,12 +4,14 @@ services:
       context: .
     image: ancient-web/phpunit-test-time
     working_dir: /app
-    # Source is live-mounted; vendor comes from the image via the named volume,
-    # so the working copy's vendor/ is never shadowed or overwritten.
+    # Run as the host user so files written to the live-mounted working copy
+    # (vendor/, caches, composer.lock) are owned by you, not root. HOME is
+    # pointed at a writable directory so git and composer have a usable config.
+    user: "${USER_ID:-1000}:${GROUP_ID:-1000}"
+    environment:
+      HOME: /tmp
+    # The whole repo is live-mounted; the entrypoint reconciles vendor/ with
+    # composer.lock on every run, so no vendor volume is needed.
     volumes:
       - .:/app
-      - vendor:/app/vendor
     command: ["vendor/bin/phpunit"]
-
-volumes:
-  vendor:

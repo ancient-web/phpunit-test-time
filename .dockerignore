@@ -1,4 +1,7 @@
 .git/
-vendor/
-.phpunit.cache/
-var/
+/.env
+/vendor/
+/.build/
+/.phpunit.cache/
+/.php-cs-fixer.cache
+/var/
