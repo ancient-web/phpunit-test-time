@@ -6,7 +6,6 @@ namespace AncientWeb\PhpUnitTestTime;
 
 use DateTimeImmutable;
 
-use function array_filter;
 use function array_slice;
 use function array_sum;
 use function count;
@@ -37,16 +36,29 @@ final readonly class Report
     /**
      * Keep only tests that took at least the given number of milliseconds.
      *
-     * @param int $milliseconds Minimum duration in milliseconds
+     * A non-zero minimum can be overridden per test by the resolver; a minimum of
+     * zero keeps everything and ignores the resolver.
+     *
+     * @param int $milliseconds Minimum duration in milliseconds (0 = keep everything)
+     * @param null|(callable(string): ?int) $perTestMinimum Resolves a per-test minimum in milliseconds
      */
-    public function withMinimumDuration(int $milliseconds): self
+    public function withMinimumDuration(int $milliseconds, ?callable $perTestMinimum = null): self
     {
-        $minimum = $milliseconds / 1000;
+        if (0 === $milliseconds) {
+            return $this;
+        }
 
-        return new self(array_filter(
-            $this->durations,
-            static fn (float $duration): bool => $duration >= $minimum,
-        ));
+        $durations = [];
+
+        foreach ($this->durations as $id => $duration) {
+            $minimum = null === $perTestMinimum ? $milliseconds : ($perTestMinimum($id) ?? $milliseconds);
+
+            if ($duration >= $minimum / 1000) {
+                $durations[$id] = $duration;
+            }
+        }
+
+        return new self($durations);
     }
 
     /**

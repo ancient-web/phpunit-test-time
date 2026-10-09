@@ -9,6 +9,11 @@ return RectorConfig::configure()
         __DIR__.'/src',
         __DIR__.'/tests',
     ])
+    // Fixtures are test doubles; their (often empty) methods must not be removed
+    // or inlined as dead code.
+    ->withSkip([
+        __DIR__.'/tests/Fixture',
+    ])
     ->withPhpSets(php84: true)
     ->withPreparedSets(
         deadCode: true,

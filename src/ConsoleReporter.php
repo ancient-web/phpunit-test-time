@@ -37,7 +37,7 @@ final readonly class ConsoleReporter implements Reporter
         }
 
         $report = Report::fromDurations($durations)
-            ->withMinimumDuration($this->minimumDuration)
+            ->withMinimumDuration($this->minimumDuration, MaximumDurationResolver::resolve(...))
             ->withMaximumCount($this->maximumCount)
         ;
 
@@ -47,6 +47,6 @@ final readonly class ConsoleReporter implements Reporter
 
         $stream = $this->configuration->outputToStandardErrorStream() ? STDERR : STDOUT;
 
-        fwrite($stream, $report->toText('Test execution time report', new DateTimeImmutable()));
+        fwrite($stream, PHP_EOL.$report->toText('Test execution time report', new DateTimeImmutable()));
     }
 }

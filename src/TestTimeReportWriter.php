@@ -297,7 +297,7 @@ final readonly class TestTimeReportWriter implements Reporter
     private function writeReport(array $durations): void
     {
         $report = Report::fromDurations($durations)
-            ->withMinimumDuration($this->minimumDuration)
+            ->withMinimumDuration($this->minimumDuration, MaximumDurationResolver::resolve(...))
             ->withMaximumCount($this->maximumCount)
         ;
 

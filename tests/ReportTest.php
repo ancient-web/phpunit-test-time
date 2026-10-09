@@ -55,4 +55,28 @@ final class ReportTest extends AbstractTestCase
         $this->assertStringContainsString('2.5000 s  slow', $text);
         $this->assertStringContainsString('0.5000 s  fast', $text);
     }
+
+    /**
+     * A per-test minimum overrides the default for that test.
+     */
+    public function testPerTestMinimumOverridesDefault(): void
+    {
+        $report = Report::fromDurations(['allowed' => 1.0, 'slow' => 1.0])
+            ->withMinimumDuration(500, static fn (string $id): ?int => 'allowed' === $id ? 2000 : null)
+        ;
+
+        $this->assertSame(['slow' => 1.0], $report->sortedDescending());
+    }
+
+    /**
+     * A zero minimum keeps everything and ignores per-test minimums.
+     */
+    public function testZeroMinimumIgnoresPerTestMinimum(): void
+    {
+        $report = Report::fromDurations(['fast' => 0.001])
+            ->withMinimumDuration(0, static fn (string $id): int => 2000)
+        ;
+
+        $this->assertSame(1, $report->count());
+    }
 }

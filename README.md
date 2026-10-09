@@ -52,6 +52,34 @@ For example, to show the ten slowest tests on the console, but everything in the
 
 The console report respects PHPUnit's `--no-output` flag and the `stderr` configuration.
 
+## Per-test maximum duration
+
+A single test method can override the minimum duration with the `MaximumDuration`
+attribute, or with the `@maximumDuration` / `@slowThreshold` doc-block annotations (the
+latter helps migrating from `johnkary/phpunit-speedtrap`):
+
+```php
+use AncientWeb\PhpUnitTestTime\Attribute\MaximumDuration;
+
+final class ExtraSlowTest extends TestCase
+{
+    #[MaximumDuration(2000)]
+    public function testAllowedToBeSlow(): void
+    {
+    }
+
+    /**
+     * @maximumDuration 1500
+     */
+    public function testAlsoAllowedToBeSlow(): void
+    {
+    }
+}
+```
+
+The override applies wherever a minimum duration is configured (the console and/or the
+file log); an output configured to show everything (`0`) is not affected.
+
 ## Report format
 
 ```

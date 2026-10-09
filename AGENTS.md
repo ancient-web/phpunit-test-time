@@ -72,6 +72,10 @@ docker compose run --rm tests composer rector      # automated refactoring (Rect
   `setUp()/tearDown()` because the process is shared.
 - **Default log path:** the `log-file` parameter, otherwise `<getcwd()>/var/test-time.log` (the
   `var/` dir is gitignored).
+- **Per-test overrides.** `MaximumDurationResolver::resolve()` reads a test's `#[MaximumDuration]`
+  attribute (then the `@maximumDuration`, then the `@slowThreshold` annotation) from the
+  `Class::method` part of its identifier, so the override survives the paratest merge. It only
+  affects outputs whose minimum duration is non-zero.
 - **`reset()` is mtime-aware.** It deletes stale report files whose mtime is older than
   `REQUEST_TIME_FLOAT` (not all files), so tests manipulate mtimes with `touch()`.
 
