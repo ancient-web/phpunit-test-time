@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-10-09
+
+### Changed
+
+- The console report now shows at most the 10 slowest tests by default (`console-count` = `10`).
+- The file log is now disabled by default; enable it with the `log` parameter.
+
+### Added
+
+- A comparison with `ergebnis/phpunit-slow-test-detector` and `johnkary/phpunit-speedtrap` in the
+  README.
+
 ## [2.0.0] - 2026-10-09
 
 ### Added
@@ -53,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parallel runs via paratest: each worker writes its own intermediate log; all logs are
   merged into a single report under an exclusive lock, keeping the maximum duration per test.
 
-[Unreleased]: https://github.com/ancient-web/phpunit-test-time/compare/2.0.0...HEAD
+[Unreleased]: https://github.com/ancient-web/phpunit-test-time/compare/2.1.0...HEAD
+[2.1.0]: https://github.com/ancient-web/phpunit-test-time/compare/2.0.0...2.1.0
 [2.0.0]: https://github.com/ancient-web/phpunit-test-time/compare/1.0.0...2.0.0
 [1.0.0]: https://github.com/ancient-web/phpunit-test-time/releases/tag/1.0.0

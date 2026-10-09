@@ -1,11 +1,21 @@
-## phpunit-test-time v2.0.0
+## phpunit-test-time v2.1.0
 
 A PHPUnit extension that measures the execution time of each test and, at the end of the run,
-reports the slowest ones. The console report is on by default; a file log can be written as well.
+reports the slowest ones. The console report is on by default; the file log is opt-in.
 
-This is a major release: configuration is now parameter-only (the `MEASURE_TIME` /
-`MEASURE_TIME_LOG` environment variables were removed), and the supported range widens to
-PHPUnit 10 through 13.
+This release adjusts the default behavior and documents how the extension compares to the
+alternatives.
+
+### Changed
+
+- The console report shows at most the 10 slowest tests by default (`console-count` = `10`).
+- The file log is disabled by default; enable it with the `log` parameter.
+- The console report stays enabled by default with `console-minimum-duration` = `500` ms.
+
+### Added
+
+- A [comparison with other extensions](https://github.com/ancient-web/phpunit-test-time#comparison-with-other-extensions)
+  (`ergebnis/phpunit-slow-test-detector` and `johnkary/phpunit-speedtrap`) in the README.
 
 ### Features
 
@@ -16,13 +26,6 @@ PHPUnit 10 through 13.
   `@slowThreshold` annotations; the per-test minimum survives the paratest merge.
 - Parallel runs via paratest: each worker writes a machine-readable (JSON) log; all worker logs
   and the accumulator are merged under an exclusive lock, keeping the maximum duration per test.
-- End-to-end tests that run the real extension in a separate PHPUnit process.
-
-### Breaking changes
-
-- Configuration is exclusively through `phpunit.xml` `<parameter>` elements.
-- The `MEASURE_TIME` and `MEASURE_TIME_LOG` environment variables were removed.
-- Registering the extension is what enables it.
 
 ### Report example
 
@@ -52,11 +55,24 @@ composer require --dev ancient-web/phpunit-test-time
 ```xml
 <extensions>
     <bootstrap class="AncientWeb\PhpUnitTestTime\TestTimeExtension">
-        <parameter name="console-count" value="10" />
+        <parameter name="log" value="true" />
         <parameter name="log-file" value="/tmp/test-time.log" />
     </bootstrap>
 </extensions>
 ```
+
+### Defaults
+
+| Parameter | Default |
+| --- | --- |
+| `console` | `true` |
+| `console-minimum-duration` | `500` |
+| `console-count` | `10` |
+| `console-maximum-width` | `0` |
+| `log` | `false` |
+| `log-file` | `var/test-time.log` |
+| `log-minimum-duration` | `0` |
+| `log-count` | `0` |
 
 ### License
 

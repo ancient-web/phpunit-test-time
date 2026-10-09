@@ -2,7 +2,7 @@
 
 A PHPUnit extension that measures the execution time of each test and, at the end of the run,
 reports the slowest ones. The report is printed to the console by default; a file log can be
-written as well.
+enabled as well.
 
 Parallel runs via `paratest` are supported: each worker writes its own intermediate log, then all
 logs are merged into a single report under an exclusive lock (for the same test the maximum
@@ -41,19 +41,19 @@ All settings are `<parameter>` elements. Durations are in milliseconds; `0` mean
 | --- | --- | --- | --- |
 | `console` | bool | `true` | print the report to the console |
 | `console-minimum-duration` | int | `500` | console shows only tests at or above this duration |
-| `console-count` | int | `0` | maximum number of tests in the console report |
+| `console-count` | int | `10` | maximum number of tests in the console report |
 | `console-maximum-width` | int / `max` | `0` | truncate console lines to this width (`0` = no truncation, `max` = detected terminal width) |
-| `log` | bool | `true` | write the file log |
+| `log` | bool | `false` | write the file log |
 | `log-file` | string | `var/test-time.log` | path to the file log |
 | `log-minimum-duration` | int | `0` | file log threshold (by default everything is written) |
 | `log-count` | int | `0` | maximum number of tests in the file log |
 
-For example, to show the ten slowest tests on the console, but everything in the file log:
+For example, to report the ten slowest tests on the console and write everything to a file log:
 
 ```xml
 <extensions>
     <bootstrap class="AncientWeb\PhpUnitTestTime\TestTimeExtension">
-        <parameter name="console-count" value="10" />
+        <parameter name="log" value="true" />
         <parameter name="log-file" value="/tmp/test-time.log" />
     </bootstrap>
 </extensions>
@@ -103,6 +103,7 @@ id when `PARATEST` is set). Point `log-file` at a shared path:
 <extensions>
     <bootstrap class="AncientWeb\PhpUnitTestTime\TestTimeExtension">
         <parameter name="console" value="false" />
+        <parameter name="log" value="true" />
         <parameter name="log-file" value="/tmp/test-time.log" />
         <parameter name="log-minimum-duration" value="500" />
     </bootstrap>
@@ -138,6 +139,39 @@ Total tests: 3, total time: 4.5000 s
      2.     1.5000 s  App\Tests\MediumTest::testSomething
      3.     0.5000 s  App\Tests\FastTest::testSomething
 ```
+
+## Comparison with other extensions
+
+[`ergebnis/phpunit-slow-test-detector`](https://github.com/ergebnis/phpunit-slow-test-detector)
+is the main inspiration for this package, and
+[`johnkary/phpunit-speedtrap`](https://github.com/johnkary/phpunit-speedtrap) is the extension it
+largely replaced. All three report slow tests; the differences are summarized below (as of
+October 2026, based on each project's documentation).
+
+| | phpunit-test-time | ergebnis/phpunit-slow-test-detector | johnkary/phpunit-speedtrap |
+| --- | :---: | :---: | :---: |
+| Console report | yes (on by default) | yes | yes |
+| File report | yes (opt-in) | no | no |
+| Threshold per output | yes (console and file separately) | no (one global) | no (one global) |
+| Slow-test limit | yes (10) | yes (10) | yes (10) |
+| Console width truncation | yes (int / `max`) | yes (int / `max`) | no |
+| Per-test threshold | attribute and annotations | attribute¹ and annotations | `@slowThreshold` |
+| Paratest: merged report | yes | no² | no² |
+| Configuration | `phpunit.xml` parameters | `phpunit.xml` parameters | `<arguments>` |
+| Supported PHPUnit | 10–13 | 6.5–13 | legacy (≤ 9) |
+| Supported PHP | `^8.4` | 7.4–8.5 | not stated |
+| GitHub Actions annotations | no | yes | no |
+
+¹ On PHPUnit 10 and later, where the `MaximumDuration` attribute exists; older versions use the
+`@maximumDuration` / `@slowThreshold` annotations.
+
+² Neither extension merges reports across paratest workers: each worker prints its own console
+report.
+
+In short, this package adds a machine-readable file log that is merged across paratest workers and
+preserves per-test thresholds through the merge, while `ergebnis/phpunit-slow-test-detector`
+focuses on a single console table and can emit GitHub Actions annotations. Both accept the
+`@slowThreshold` annotation for a smooth migration from `johnkary/phpunit-speedtrap`.
 
 ## Development
 

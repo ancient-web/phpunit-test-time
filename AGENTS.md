@@ -77,7 +77,8 @@ docker compose run --rm tests composer phar        # build the distributable PHA
   Registering the extension is what enables it.
 - **Console vs file.** The console report is printed only when not in paratest (every worker is a
   separate process) and respects PHPUnit's `noOutput()`/`outputToStandardErrorStream()`. The file
-  log is the only paratest output and merges all workers.
+  log is the only paratest output and merges all workers. The console report is on by default
+  (minimum 500 ms, top 10); the file log is off by default.
 - **Env is only for paratest.** `getenv()` is used solely to resolve the worker token
   (`TEST_TOKEN`, then `UNIQUE_TEST_TOKEN`, then pid when `PARATEST` is set); tests clear these in
   `setUp()/tearDown()` because the process is shared.
