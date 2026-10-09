@@ -37,23 +37,28 @@ docker compose run --rm tests composer rector      # automated refactoring (Rect
 
 ## Architecture
 
-- `src/TestTimeExtension.php` — PHPUnit `Extension`; on `bootstrap()` checks `isEnabled()`, then
-  wires the collector and registers 6 event subscribers.
+- `src/TestTimeExtension.php` — PHPUnit `Extension`; on `bootstrap()` checks the `Environment`,
+  then wires the collector and registers 6 event subscribers.
+- `src/Environment.php` — reads `MEASURE_TIME`/`MEASURE_TIME_LOG` from `getenv()`, then
+  `$_SERVER`/`$_ENV`.
 - `src/Subscriber/*` — thin adapters translating PHPUnit test lifecycle events
   (`PreparationStarted/Errored/Failed`, `Finished`, `ExecutionFinished/Aborted`) into
   `collector->start()/finish()/writeReport()`.
 - `src/TestTimeCollector.php` — maps test id → duration; `writeReport()` writes once.
-- `src/TestTimeReportWriter.php` — formats the report and handles paratest merging.
+- `src/TestTimeReportWriter.php` — renders the human report and merges paratest worker logs.
+- `src/Exception/ReportWriteFailed.php` — thrown when the report cannot be written.
 
 ## Behavior you must not break
 
-- **Report format is parsed back.** `TestTimeReportWriter::readFile()` re-reads the report with a
-  regex (`^\s*\d+\.\s+([0-9]+\.[0-9]+) s  (.+)$`) to merge paratest worker logs. Changing the
-  line format in `writeFile()` silently breaks merging — update both.
+- **Two formats.** Worker logs and the shared accumulator are JSON (machine-readable); the human
+  report (`<base>.log`) is rendered from the accumulator. Merging never parses the human report,
+  so its line format can change freely.
 - **Paratest merging.** A worker token is resolved from `TEST_TOKEN`, then `UNIQUE_TEST_TOKEN`,
-  then pid when `PARATEST` is set; otherwise no token. Each worker writes `<base>.<token>.log`,
-  the shared report is rebuilt under `LOCK_EX`, durations are merged **keeping the max**, and
-  worker logs are deleted. Base path strips a trailing `.log`.
+  then pid when `PARATEST` is set; otherwise there is no token and the human report is written
+  directly. With a token, the worker writes `<base>.<token>.json`, then merges every
+  `<base>.*.json` worker log plus the `<base>.json` accumulator under `LOCK_EX`, keeping the
+  **maximum** duration per test, writes the accumulator and `<base>.log`, and deletes the worker
+  logs. Base path strips a trailing `.log`.
 - **Enable flag.** Measurement is off unless `MEASURE_TIME` is non-empty and not `0`.
 - **Env lookup is dual.** `getenv()` is tried first, then `$_SERVER`/`$_ENV`. Tests set values with
   `putenv()` and must clear them in `setUp()/tearDown()` because the process is shared.
@@ -69,5 +74,5 @@ docker compose run --rm tests composer rector      # automated refactoring (Rect
 - Every method and parameter has a docblock (the codebase style).
 - Global functions are imported explicitly, e.g. `use function file_get_contents;`.
 - PSR-4: `AncientWeb\PhpUnitTestTime\` → `src/`, `AncientWeb\PhpUnitTestTime\Tests\` → `tests/`.
-- `composer.lock` is gitignored (unusual for a library); the Dockerfile copies `composer.lock*`
-  optionally.
+- `composer.lock` is gitignored (library convention); the Docker entrypoint installs dependencies
+  from it into the live-mounted `vendor/` on each run.

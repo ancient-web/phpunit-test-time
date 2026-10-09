@@ -17,8 +17,6 @@ use PHPUnit\Runner\Extension\ParameterCollection;
 use PHPUnit\TextUI\Configuration\Configuration;
 
 use function getcwd;
-use function getenv;
-use function is_string;
 
 /**
  * PHPUnit extension that measures the execution time of each test.
@@ -45,11 +43,13 @@ final class TestTimeExtension implements Extension
     #[Override]
     public function bootstrap(Configuration $configuration, Facade $facade, ParameterCollection $parameters): void
     {
-        if (!$this->isEnabled()) {
+        $environment = Environment::fromGlobals();
+
+        if (!$environment->isMeasurementEnabled()) {
             return;
         }
 
-        $reportWriter = new TestTimeReportWriter($this->resolveLogPath($parameters));
+        $reportWriter = new TestTimeReportWriter($this->resolveLogPath($parameters, $environment));
         $reportWriter->reset();
 
         $collector = new TestTimeCollector($reportWriter);
@@ -65,43 +65,24 @@ final class TestTimeExtension implements Extension
     }
 
     /**
-     * Check whether time measurement is enabled.
-     *
-     * The MEASURE_TIME environment variable must be non-empty and not equal to 0
-     */
-    private function isEnabled(): bool
-    {
-        $value = getenv('MEASURE_TIME');
-
-        if (false === $value) {
-            $value = $_SERVER['MEASURE_TIME'] ?? $_ENV['MEASURE_TIME'] ?? false;
-        }
-
-        return false !== $value && '' !== $value && '0' !== $value;
-    }
-
-    /**
      * Resolve the report file path.
      *
      * Priority: the log-file parameter, then the MEASURE_TIME_LOG environment variable,
      * then var/test-time.log relative to the current working directory
      *
      * @param ParameterCollection $parameters Extension parameters
+     * @param Environment $environment Process environment
      */
-    private function resolveLogPath(ParameterCollection $parameters): string
+    private function resolveLogPath(ParameterCollection $parameters, Environment $environment): string
     {
         if ($parameters->has('log-file')) {
             return $parameters->get('log-file');
         }
 
-        $value = getenv('MEASURE_TIME_LOG');
+        $path = $environment->get('MEASURE_TIME_LOG');
 
-        if (false === $value) {
-            $value = $_SERVER['MEASURE_TIME_LOG'] ?? $_ENV['MEASURE_TIME_LOG'] ?? false;
-        }
-
-        if (is_string($value) && '' !== $value) {
-            return $value;
+        if (null !== $path) {
+            return $path;
         }
 
         $directory = getcwd();

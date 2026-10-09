@@ -8,12 +8,13 @@ use AncientWeb\PhpUnitTestTime\TestTimeReportWriter;
 
 use function file_get_contents;
 use function file_put_contents;
+use function json_decode;
 use function strpos;
 use function time;
 use function touch;
 
 /**
- * Tests for reading test durations from the report.
+ * Tests for the test execution time report writer.
  *
  * @internal
  *
@@ -90,8 +91,27 @@ final class TestTimeReportWriterTest extends AbstractTestCase
 
         $this->assertStringContainsString('3.0000 s', $contents);
         $this->assertStringNotContainsString('1.0000 s', $contents);
-        $this->assertFileDoesNotExist($this->directory.'/test-time.worker-1.log');
-        $this->assertFileDoesNotExist($this->directory.'/test-time.worker-2.log');
+        $this->assertFileDoesNotExist($this->directory.'/test-time.worker-1.json');
+        $this->assertFileDoesNotExist($this->directory.'/test-time.worker-2.json');
+    }
+
+    /**
+     * The merged durations are kept in a machine-readable accumulator.
+     */
+    public function testWritesMachineReadableAccumulator(): void
+    {
+        $path = $this->directory.'/test-time.log';
+
+        putenv('TEST_TOKEN=worker-1');
+        new TestTimeReportWriter($path)->write(['shared-test' => 1.0]);
+
+        $accumulator = $this->directory.'/test-time.json';
+
+        $this->assertFileExists($accumulator);
+        $this->assertSame(
+            ['shared-test' => 1.0],
+            json_decode((string) file_get_contents($accumulator), true),
+        );
     }
 
     /**
@@ -103,18 +123,23 @@ final class TestTimeReportWriterTest extends AbstractTestCase
         file_put_contents($path, 'stale');
         touch($path, time() - 3600);
 
-        $tokenPath = $this->directory.'/test-time.worker.log';
-        file_put_contents($tokenPath, 'stale token');
-        touch($tokenPath, time() - 3600);
+        $accumulatorPath = $this->directory.'/test-time.json';
+        file_put_contents($accumulatorPath, '{}');
+        touch($accumulatorPath, time() - 3600);
 
-        $freshPath = $this->directory.'/test-time.fresh.log';
-        file_put_contents($freshPath, 'fresh');
+        $workerPath = $this->directory.'/test-time.worker.json';
+        file_put_contents($workerPath, '{}');
+        touch($workerPath, time() - 3600);
+
+        $freshPath = $this->directory.'/test-time.fresh.json';
+        file_put_contents($freshPath, '{}');
         touch($freshPath, time() + 3600);
 
         new TestTimeReportWriter($path)->reset();
 
         $this->assertFileDoesNotExist($path);
-        $this->assertFileDoesNotExist($tokenPath);
+        $this->assertFileDoesNotExist($accumulatorPath);
+        $this->assertFileDoesNotExist($workerPath);
         $this->assertFileExists($freshPath);
     }
 

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace AncientWeb\PhpUnitTestTime;
 
+use AncientWeb\PhpUnitTestTime\Exception\ReportWriteFailed;
 use DateTimeImmutable;
 
 use function array_merge;
 use function array_sum;
 use function count;
 use function dirname;
-use function explode;
 use function fclose;
 use function file_get_contents;
 use function file_put_contents;
@@ -21,11 +21,13 @@ use function getenv;
 use function getmypid;
 use function glob;
 use function implode;
+use function is_array;
 use function is_dir;
 use function is_numeric;
+use function json_decode;
+use function json_encode;
 use function microtime;
 use function mkdir;
-use function preg_match;
 use function preg_replace;
 use function sprintf;
 use function str_ends_with;
@@ -36,12 +38,17 @@ use function unlink;
 /**
  * Builds the test execution time report.
  *
- * In paratest mode each worker writes its own intermediate log under its token,
- * then all logs are merged into a shared report under an exclusive lock
- * and the intermediate files are removed
+ * Each process records its durations as a JSON worker log. In paratest mode all
+ * worker logs are merged into a JSON accumulator under an exclusive lock, from
+ * which the human-readable report is rendered; the worker logs are then removed
  */
 final readonly class TestTimeReportWriter
 {
+    /**
+     * Flags used to encode the machine-readable logs.
+     */
+    private const JSON_FLAGS = JSON_PRESERVE_ZERO_FRACTION | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+
     /**
      * @param string $reportPath Path to the shared report file
      */
@@ -58,7 +65,7 @@ final readonly class TestTimeReportWriter
             ? (float) $_SERVER['REQUEST_TIME_FLOAT']
             : microtime(true);
 
-        foreach ($this->existingReportFiles() as $file) {
+        foreach ($this->existingFiles() as $file) {
             $modifiedAt = @filemtime($file);
 
             if (false !== $modifiedAt && $modifiedAt < $threshold) {
@@ -68,7 +75,7 @@ final readonly class TestTimeReportWriter
     }
 
     /**
-     * Write the current process report and merge it with reports of other processes.
+     * Write the current process durations and, in paratest mode, merge all workers.
      *
      * @param array<string, float> $durations Test durations in seconds keyed by test identifier
      */
@@ -77,54 +84,48 @@ final readonly class TestTimeReportWriter
         $token = $this->resolveToken();
 
         if (null === $token) {
-            $this->writeFile($this->reportPath, $durations, 'Test execution time report');
+            $this->writeHumanReport($this->reportPath, $durations, 'Test execution time report');
 
             return;
         }
 
-        $this->writeFile($this->tokenReportPath($token), $durations, sprintf('Test execution time (worker %s)', $token));
+        $this->writeJson($this->workerPath($token), $durations);
 
-        $this->mergeTokenReports($durations);
+        $this->merge();
     }
 
     /**
-     * Merge all worker reports into the shared file and remove intermediate logs.
-     *
-     * @param array<string, float> $durations Durations of the current worker
+     * Merge all worker logs into the accumulator and render the shared report.
      */
-    private function mergeTokenReports(array $durations): void
+    private function merge(): void
     {
-        if (!$this->ensureDirectory(dirname($this->reportPath))) {
-            return;
-        }
+        $this->ensureDirectory(dirname($this->reportPath));
 
-        $handle = @fopen($this->reportPath, 'c');
+        $accumulatorPath = $this->accumulatorPath();
+        $handle = @fopen($accumulatorPath, 'c');
 
         if (false === $handle) {
-            return;
+            throw ReportWriteFailed::open($accumulatorPath);
         }
 
         try {
             if (!flock($handle, LOCK_EX)) {
-                return;
+                throw ReportWriteFailed::lock($accumulatorPath);
             }
 
             try {
-                $merged = $this->readFile($this->reportPath);
+                $merged = $this->readJson($accumulatorPath);
 
-                foreach ($this->tokenReportFiles() as $file) {
-                    foreach ($this->readFile($file) as $id => $duration) {
+                foreach ($this->workerPaths() as $file) {
+                    foreach ($this->readJson($file) as $id => $duration) {
                         $this->mergeDuration($merged, $id, $duration);
                     }
                 }
 
-                foreach ($durations as $id => $duration) {
-                    $this->mergeDuration($merged, $id, $duration);
-                }
+                $this->writeJson($accumulatorPath, $merged);
+                $this->writeHumanReport($this->reportPath, $merged, 'Final test execution time report');
 
-                $this->writeFile($this->reportPath, $merged, 'Final test execution time report');
-
-                $this->removeTokenReports();
+                $this->removeWorkerLogs();
             } finally {
                 flock($handle, LOCK_UN);
             }
@@ -150,9 +151,9 @@ final readonly class TestTimeReportWriter
     /**
      * Remove intermediate worker logs.
      */
-    private function removeTokenReports(): void
+    private function removeWorkerLogs(): void
     {
-        foreach ($this->tokenReportFiles() as $file) {
+        foreach ($this->workerPaths() as $file) {
             @unlink($file);
         }
     }
@@ -184,23 +185,26 @@ final readonly class TestTimeReportWriter
     }
 
     /**
-     * Get the list of existing report files.
+     * Get the list of files written by previous runs.
      *
      * @return array<int, string>
      */
-    private function existingReportFiles(): array
+    private function existingFiles(): array
     {
-        return array_merge([$this->reportPath], $this->tokenReportFiles());
+        return array_merge(
+            [$this->reportPath, $this->accumulatorPath()],
+            $this->workerPaths(),
+        );
     }
 
     /**
-     * Get the list of worker report files.
+     * Get the list of worker log files.
      *
      * @return array<int, string>
      */
-    private function tokenReportFiles(): array
+    private function workerPaths(): array
     {
-        $files = glob($this->basePath().'.*.log');
+        $files = glob($this->basePath().'.*.json');
 
         if (false === $files) {
             return [];
@@ -210,15 +214,23 @@ final readonly class TestTimeReportWriter
     }
 
     /**
-     * Get the path to a worker report file.
+     * Get the path to a worker log file.
      *
      * @param string $token Worker token
      */
-    private function tokenReportPath(string $token): string
+    private function workerPath(string $token): string
     {
         $safeToken = preg_replace('/[^A-Za-z0-9_.-]/', '_', $token) ?? 'worker';
 
-        return $this->basePath().'.'.$safeToken.'.log';
+        return $this->basePath().'.'.$safeToken.'.json';
+    }
+
+    /**
+     * Get the path to the JSON accumulator shared by all workers.
+     */
+    private function accumulatorPath(): string
+    {
+        return $this->basePath().'.json';
     }
 
     /**
@@ -234,27 +246,84 @@ final readonly class TestTimeReportWriter
     }
 
     /**
-     * Create the report directory if it does not exist.
+     * Create a directory if it does not exist.
      *
      * @param string $directory Directory path
      */
-    private function ensureDirectory(string $directory): bool
+    private function ensureDirectory(string $directory): void
     {
         if (is_dir($directory)) {
-            return true;
+            return;
         }
 
-        return mkdir($directory, 0o777, true) || is_dir($directory);
+        if (!mkdir($directory, 0o777, true) && !is_dir($directory)) {
+            throw ReportWriteFailed::directory($directory);
+        }
     }
 
     /**
-     * Write the report sorted by duration descending.
+     * Write a machine-readable log.
+     *
+     * @param string $path Log file path
+     * @param array<string, float> $durations Test durations in seconds keyed by test identifier
+     */
+    private function writeJson(string $path, array $durations): void
+    {
+        $this->ensureDirectory(dirname($path));
+
+        $json = json_encode($durations, self::JSON_FLAGS);
+
+        if (false === $json) {
+            throw ReportWriteFailed::write($path);
+        }
+
+        if (false === file_put_contents($path, $json)) {
+            throw ReportWriteFailed::write($path);
+        }
+    }
+
+    /**
+     * Read a machine-readable log.
+     *
+     * @param string $path Log file path
+     *
+     * @return array<string, float>
+     */
+    private function readJson(string $path): array
+    {
+        $contents = @file_get_contents($path);
+
+        if (false === $contents || '' === $contents) {
+            return [];
+        }
+
+        $decoded = json_decode($contents, true);
+
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $durations = [];
+
+        foreach ($decoded as $id => $duration) {
+            if (!is_string($id) || !is_numeric($duration)) {
+                continue;
+            }
+
+            $durations[$id] = (float) $duration;
+        }
+
+        return $durations;
+    }
+
+    /**
+     * Write the human-readable report sorted by duration descending.
      *
      * @param string $path Report file path
      * @param array<string, float> $durations Test durations in seconds keyed by test identifier
      * @param string $title Report title
      */
-    private function writeFile(string $path, array $durations, string $title): void
+    private function writeHumanReport(string $path, array $durations, string $title): void
     {
         uasort($durations, static fn (float $first, float $second): int => $second <=> $first);
 
@@ -274,34 +343,8 @@ final readonly class TestTimeReportWriter
 
         $this->ensureDirectory(dirname($path));
 
-        file_put_contents($path, implode(PHP_EOL, $lines).PHP_EOL);
-    }
-
-    /**
-     * Read the report and get test durations.
-     *
-     * @param string $path Report file path
-     *
-     * @return array<string, float>
-     */
-    private function readFile(string $path): array
-    {
-        $contents = @file_get_contents($path);
-
-        if (false === $contents) {
-            return [];
+        if (false === file_put_contents($path, implode(PHP_EOL, $lines).PHP_EOL)) {
+            throw ReportWriteFailed::write($path);
         }
-
-        $durations = [];
-
-        foreach (explode(PHP_EOL, $contents) as $line) {
-            if (1 !== preg_match('/^\s*\d+\.\s+([0-9]+\.[0-9]+) s  (.+)$/', $line, $matches)) {
-                continue;
-            }
-
-            $durations[$matches[2]] = (float) $matches[1];
-        }
-
-        return $durations;
     }
 }
