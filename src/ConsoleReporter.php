@@ -30,16 +30,16 @@ final readonly class ConsoleReporter implements Reporter
     /**
      * Print the report unless output is suppressed or nothing matches.
      *
-     * @param array<string, float> $durations Test durations in seconds keyed by test identifier
+     * @param array<string, TestTime> $testTimes Test times keyed by test identifier
      */
-    public function report(array $durations): void
+    public function report(array $testTimes): void
     {
         if ($this->configuration->noOutput()) {
             return;
         }
 
-        $report = Report::fromDurations($durations)
-            ->withMinimumDuration($this->minimumDuration, MaximumDurationResolver::resolve(...))
+        $report = Report::fromTestTimes($testTimes)
+            ->withMinimumDuration($this->minimumDuration)
             ->withMaximumCount($this->maximumCount)
         ;
 

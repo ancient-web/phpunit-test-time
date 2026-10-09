@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace AncientWeb\PhpUnitTestTime\Tests;
 
 use AncientWeb\PhpUnitTestTime\Report;
+use AncientWeb\PhpUnitTestTime\TestTime;
 use DateTimeImmutable;
 
+use function array_keys;
 use function explode;
 use function mb_strlen;
 use function trim;
@@ -21,7 +23,11 @@ final class ReportTest extends AbstractTestCase
      */
     public function testFiltersByMinimumDuration(): void
     {
-        $report = Report::fromDurations(['fast' => 0.1, 'medium' => 0.6, 'slow' => 1.2])
+        $report = Report::fromTestTimes([
+            'fast' => new TestTime(0.1),
+            'medium' => new TestTime(0.6),
+            'slow' => new TestTime(1.2),
+        ])
             ->withMinimumDuration(500)
         ;
 
@@ -34,11 +40,15 @@ final class ReportTest extends AbstractTestCase
      */
     public function testLimitsByMaximumCount(): void
     {
-        $report = Report::fromDurations(['fast' => 0.1, 'medium' => 0.6, 'slow' => 1.2])
+        $report = Report::fromTestTimes([
+            'fast' => new TestTime(0.1),
+            'medium' => new TestTime(0.6),
+            'slow' => new TestTime(1.2),
+        ])
             ->withMaximumCount(2)
         ;
 
-        $this->assertSame(['slow' => 1.2, 'medium' => 0.6], $report->sortedDescending());
+        $this->assertSame(['slow', 'medium'], array_keys($report->sortedDescending()));
     }
 
     /**
@@ -46,7 +56,10 @@ final class ReportTest extends AbstractTestCase
      */
     public function testRendersText(): void
     {
-        $report = Report::fromDurations(['fast' => 0.5, 'slow' => 2.5]);
+        $report = Report::fromTestTimes([
+            'fast' => new TestTime(0.5),
+            'slow' => new TestTime(2.5),
+        ]);
 
         $text = $report->toText('Title', new DateTimeImmutable('2026-01-01 12:00:00'));
 
@@ -61,11 +74,14 @@ final class ReportTest extends AbstractTestCase
      */
     public function testPerTestMinimumOverridesDefault(): void
     {
-        $report = Report::fromDurations(['allowed' => 1.0, 'slow' => 1.0])
-            ->withMinimumDuration(500, static fn (string $id): ?int => 'allowed' === $id ? 2000 : null)
+        $report = Report::fromTestTimes([
+            'allowed' => new TestTime(1.0, 2000),
+            'slow' => new TestTime(1.0),
+        ])
+            ->withMinimumDuration(500)
         ;
 
-        $this->assertSame(['slow' => 1.0], $report->sortedDescending());
+        $this->assertSame(['slow'], array_keys($report->sortedDescending()));
     }
 
     /**
@@ -73,8 +89,10 @@ final class ReportTest extends AbstractTestCase
      */
     public function testZeroMinimumIgnoresPerTestMinimum(): void
     {
-        $report = Report::fromDurations(['fast' => 0.001])
-            ->withMinimumDuration(0, static fn (string $id): int => 2000)
+        $report = Report::fromTestTimes([
+            'fast' => new TestTime(0.001, 2000),
+        ])
+            ->withMinimumDuration(0)
         ;
 
         $this->assertSame(1, $report->count());
@@ -87,7 +105,7 @@ final class ReportTest extends AbstractTestCase
     {
         $id = 'AncientWeb\PhpUnitTestTime\Tests\SomeVeryLongTestClassName::testSomethingLong';
 
-        $report = Report::fromDurations([$id => 1.0]);
+        $report = Report::fromTestTimes([$id => new TestTime(1.0)]);
 
         $text = $report->toText('Title', new DateTimeImmutable('2026-01-01 12:00:00'), 60);
 

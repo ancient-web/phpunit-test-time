@@ -21,6 +21,7 @@ use function is_dir;
 use function is_numeric;
 use function json_decode;
 use function json_encode;
+use function max;
 use function microtime;
 use function mkdir;
 use function preg_replace;
@@ -31,7 +32,7 @@ use function unlink;
 /**
  * Writes the test execution time report to a file.
  *
- * Each process records its durations as a JSON worker log. In paratest mode all
+ * Each process records its test times as a JSON worker log. In paratest mode all
  * worker logs are merged into a JSON accumulator under an exclusive lock, from
  * which the human-readable report is rendered; the worker logs are then removed
  */
@@ -76,19 +77,19 @@ final readonly class TestTimeReportWriter implements Reporter
     }
 
     /**
-     * Write the current process durations and, in paratest mode, merge all workers.
+     * Write the current process test times and, in paratest mode, merge all workers.
      *
-     * @param array<string, float> $durations Test durations in seconds keyed by test identifier
+     * @param array<string, TestTime> $testTimes Test times keyed by test identifier
      */
-    public function report(array $durations): void
+    public function report(array $testTimes): void
     {
         if (null === $this->token) {
-            $this->writeReport($durations);
+            $this->writeReport($testTimes);
 
             return;
         }
 
-        $this->writeJson($this->workerPath($this->token), $durations);
+        $this->writeJson($this->workerPath($this->token), $testTimes);
 
         $this->merge();
     }
@@ -116,8 +117,8 @@ final readonly class TestTimeReportWriter implements Reporter
                 $merged = $this->readJson($accumulatorPath);
 
                 foreach ($this->workerPaths() as $file) {
-                    foreach ($this->readJson($file) as $id => $duration) {
-                        $this->mergeDuration($merged, $id, $duration);
+                    foreach ($this->readJson($file) as $id => $testTime) {
+                        $this->mergeTestTime($merged, $id, $testTime);
                     }
                 }
 
@@ -134,17 +135,26 @@ final readonly class TestTimeReportWriter implements Reporter
     }
 
     /**
-     * Add a test duration to the merged set, keeping the maximum value.
+     * Add a test time to the merged set, keeping the maximum duration.
      *
-     * @param array<string, float> $merged Merged set of durations
+     * @param array<string, TestTime> $merged Merged set of test times
      * @param string $id Test identifier
-     * @param float $duration Test duration
+     * @param TestTime $testTime Test time
      */
-    private function mergeDuration(array &$merged, string $id, float $duration): void
+    private function mergeTestTime(array &$merged, string $id, TestTime $testTime): void
     {
-        if (!isset($merged[$id]) || $duration > $merged[$id]) {
-            $merged[$id] = $duration;
+        if (!isset($merged[$id])) {
+            $merged[$id] = $testTime;
+
+            return;
         }
+
+        $current = $merged[$id];
+
+        $merged[$id] = new TestTime(
+            max($current->seconds, $testTime->seconds),
+            $current->minimumMilliseconds ?? $testTime->minimumMilliseconds,
+        );
     }
 
     /**
@@ -238,13 +248,22 @@ final readonly class TestTimeReportWriter implements Reporter
      * Write a machine-readable log.
      *
      * @param string $path Log file path
-     * @param array<string, float> $durations Test durations in seconds keyed by test identifier
+     * @param array<string, TestTime> $testTimes Test times keyed by test identifier
      */
-    private function writeJson(string $path, array $durations): void
+    private function writeJson(string $path, array $testTimes): void
     {
         $this->ensureDirectory(dirname($path));
 
-        $json = json_encode($durations, self::JSON_FLAGS);
+        $data = [];
+
+        foreach ($testTimes as $id => $testTime) {
+            $data[$id] = [
+                'duration' => $testTime->seconds,
+                'minimum' => $testTime->minimumMilliseconds,
+            ];
+        }
+
+        $json = json_encode($data, self::JSON_FLAGS);
 
         if (false === $json) {
             throw ReportWriteFailed::write($path);
@@ -260,7 +279,7 @@ final readonly class TestTimeReportWriter implements Reporter
      *
      * @param string $path Log file path
      *
-     * @return array<string, float>
+     * @return array<string, TestTime>
      */
     private function readJson(string $path): array
     {
@@ -276,28 +295,39 @@ final readonly class TestTimeReportWriter implements Reporter
             return [];
         }
 
-        $durations = [];
+        $testTimes = [];
 
-        foreach ($decoded as $id => $duration) {
-            if (!is_string($id) || !is_numeric($duration)) {
+        foreach ($decoded as $id => $entry) {
+            if (!is_string($id) || !is_array($entry)) {
                 continue;
             }
 
-            $durations[$id] = (float) $duration;
+            $duration = $entry['duration'] ?? null;
+
+            if (!is_numeric($duration)) {
+                continue;
+            }
+
+            $minimum = $entry['minimum'] ?? null;
+
+            $testTimes[$id] = new TestTime(
+                (float) $duration,
+                is_numeric($minimum) ? (int) $minimum : null,
+            );
         }
 
-        return $durations;
+        return $testTimes;
     }
 
     /**
      * Write the human-readable report, filtered by the configured threshold and count.
      *
-     * @param array<string, float> $durations Test durations in seconds keyed by test identifier
+     * @param array<string, TestTime> $testTimes Test times keyed by test identifier
      */
-    private function writeReport(array $durations): void
+    private function writeReport(array $testTimes): void
     {
-        $report = Report::fromDurations($durations)
-            ->withMinimumDuration($this->minimumDuration, MaximumDurationResolver::resolve(...))
+        $report = Report::fromTestTimes($testTimes)
+            ->withMinimumDuration($this->minimumDuration)
             ->withMaximumCount($this->maximumCount)
         ;
 

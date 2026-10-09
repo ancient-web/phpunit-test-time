@@ -7,7 +7,6 @@ namespace AncientWeb\PhpUnitTestTime;
 use DateTimeImmutable;
 
 use function array_slice;
-use function array_sum;
 use function count;
 use function implode;
 use function intdiv;
@@ -17,51 +16,50 @@ use function sprintf;
 use function uasort;
 
 /**
- * Test durations prepared for output.
+ * Test times prepared for output.
  */
 final readonly class Report
 {
     /**
-     * @param array<string, float> $durations Test durations in seconds keyed by test identifier
+     * @param array<string, TestTime> $testTimes Test times keyed by test identifier
      */
-    private function __construct(private array $durations) {}
+    private function __construct(private array $testTimes) {}
 
     /**
-     * Create a report from raw durations.
+     * Create a report from collected test times.
      *
-     * @param array<string, float> $durations Test durations in seconds keyed by test identifier
+     * @param array<string, TestTime> $testTimes Test times keyed by test identifier
      */
-    public static function fromDurations(array $durations): self
+    public static function fromTestTimes(array $testTimes): self
     {
-        return new self($durations);
+        return new self($testTimes);
     }
 
     /**
-     * Keep only tests that took at least the given number of milliseconds.
+     * Keep only tests that took at least the minimum duration.
      *
-     * A non-zero minimum can be overridden per test by the resolver; a minimum of
-     * zero keeps everything and ignores the resolver.
+     * The default minimum can be overridden per test; a minimum of zero keeps
+     * everything.
      *
-     * @param int $milliseconds Minimum duration in milliseconds (0 = keep everything)
-     * @param null|(callable(string): ?int) $perTestMinimum Resolves a per-test minimum in milliseconds
+     * @param int $milliseconds Default minimum duration in milliseconds (0 = keep everything)
      */
-    public function withMinimumDuration(int $milliseconds, ?callable $perTestMinimum = null): self
+    public function withMinimumDuration(int $milliseconds): self
     {
         if (0 === $milliseconds) {
             return $this;
         }
 
-        $durations = [];
+        $testTimes = [];
 
-        foreach ($this->durations as $id => $duration) {
-            $minimum = null === $perTestMinimum ? $milliseconds : ($perTestMinimum($id) ?? $milliseconds);
+        foreach ($this->testTimes as $id => $testTime) {
+            $minimum = $testTime->minimumMilliseconds ?? $milliseconds;
 
-            if ($duration >= $minimum / 1000) {
-                $durations[$id] = $duration;
+            if ($testTime->seconds >= $minimum / 1000) {
+                $testTimes[$id] = $testTime;
             }
         }
 
-        return new self($durations);
+        return new self($testTimes);
     }
 
     /**
@@ -79,17 +77,17 @@ final readonly class Report
     }
 
     /**
-     * Get the durations sorted by duration descending.
+     * Get the test times sorted by duration descending.
      *
-     * @return array<string, float>
+     * @return array<string, TestTime>
      */
     public function sortedDescending(): array
     {
-        $durations = $this->durations;
+        $testTimes = $this->testTimes;
 
-        uasort($durations, static fn (float $first, float $second): int => $second <=> $first);
+        uasort($testTimes, static fn (TestTime $first, TestTime $second): int => $second->seconds <=> $first->seconds);
 
-        return $durations;
+        return $testTimes;
     }
 
     /**
@@ -97,7 +95,7 @@ final readonly class Report
      */
     public function count(): int
     {
-        return count($this->durations);
+        return count($this->testTimes);
     }
 
     /**
@@ -105,7 +103,13 @@ final readonly class Report
      */
     public function totalSeconds(): float
     {
-        return array_sum($this->durations);
+        $total = 0.0;
+
+        foreach ($this->testTimes as $testTime) {
+            $total += $testTime->seconds;
+        }
+
+        return $total;
     }
 
     /**
@@ -125,8 +129,8 @@ final readonly class Report
 
         $position = 1;
 
-        foreach ($this->sortedDescending() as $id => $duration) {
-            $prefix = sprintf('%6d. %10.4f s  ', $position, $duration);
+        foreach ($this->sortedDescending() as $id => $testTime) {
+            $prefix = sprintf('%6d. %10.4f s  ', $position, $testTime->seconds);
 
             $lines[] = $prefix.$this->truncate($id, $maximumWidth - mb_strlen($prefix));
 

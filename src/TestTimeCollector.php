@@ -19,9 +19,9 @@ final class TestTimeCollector
     private array $started = [];
 
     /**
-     * @var array<string, float> Test execution durations in seconds keyed by test identifier
+     * @var array<string, TestTime> Test times keyed by test identifier
      */
-    private array $durations = [];
+    private array $testTimes = [];
 
     /**
      * Whether the report has already been written.
@@ -34,7 +34,7 @@ final class TestTimeCollector
     private readonly array $reporters;
 
     /**
-     * @param Reporter ...$reporters Reporters to send the collected durations to
+     * @param Reporter ...$reporters Reporters to send the collected times to
      */
     public function __construct(Reporter ...$reporters)
     {
@@ -55,6 +55,9 @@ final class TestTimeCollector
     /**
      * Record the end of a test and compute its duration.
      *
+     * The per-test minimum is resolved here, while the test class is loaded, so
+     * it can be carried through the paratest merge.
+     *
      * @param string $testId Test identifier
      * @param HRTime $time End time
      */
@@ -64,7 +67,10 @@ final class TestTimeCollector
             return;
         }
 
-        $this->durations[$testId] = $time->duration($this->started[$testId])->asFloat();
+        $this->testTimes[$testId] = new TestTime(
+            $time->duration($this->started[$testId])->asFloat(),
+            MaximumDurationResolver::resolve($testId),
+        );
 
         unset($this->started[$testId]);
     }
@@ -81,7 +87,7 @@ final class TestTimeCollector
         $this->written = true;
 
         foreach ($this->reporters as $reporter) {
-            $reporter->report($this->durations);
+            $reporter->report($this->testTimes);
         }
     }
 }

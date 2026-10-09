@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AncientWeb\PhpUnitTestTime\Tests;
 
+use AncientWeb\PhpUnitTestTime\TestTime;
 use AncientWeb\PhpUnitTestTime\TestTimeReportWriter;
 
 use function file_get_contents;
@@ -26,9 +27,9 @@ final class TestTimeReportWriterTest extends AbstractTestCase
         $path = $this->directory.'/test-time.log';
 
         new TestTimeReportWriter($path)->report([
-            'fast-test' => 0.5,
-            'slow-test' => 2.5,
-            'medium-test' => 1.5,
+            'fast-test' => new TestTime(0.5),
+            'slow-test' => new TestTime(2.5),
+            'medium-test' => new TestTime(1.5),
         ]);
 
         $contents = (string) file_get_contents($path);
@@ -54,8 +55,8 @@ final class TestTimeReportWriterTest extends AbstractTestCase
         $path = $this->directory.'/test-time.log';
 
         new TestTimeReportWriter($path, 500)->report([
-            'fast-test' => 0.1,
-            'slow-test' => 1.0,
+            'fast-test' => new TestTime(0.1),
+            'slow-test' => new TestTime(1.0),
         ]);
 
         $contents = (string) file_get_contents($path);
@@ -72,8 +73,8 @@ final class TestTimeReportWriterTest extends AbstractTestCase
         $path = $this->directory.'/test-time.log';
 
         new TestTimeReportWriter($path, 0, 1)->report([
-            'fast-test' => 0.1,
-            'slow-test' => 1.0,
+            'fast-test' => new TestTime(0.1),
+            'slow-test' => new TestTime(1.0),
         ]);
 
         $contents = (string) file_get_contents($path);
@@ -89,8 +90,8 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/test-time.log';
 
-        new TestTimeReportWriter($path, 0, 0, 'worker-1')->report(['shared-test' => 1.0]);
-        new TestTimeReportWriter($path, 0, 0, 'worker-2')->report(['shared-test' => 3.0]);
+        new TestTimeReportWriter($path, 0, 0, 'worker-1')->report(['shared-test' => new TestTime(1.0)]);
+        new TestTimeReportWriter($path, 0, 0, 'worker-2')->report(['shared-test' => new TestTime(3.0)]);
 
         $contents = (string) file_get_contents($path);
 
@@ -101,19 +102,69 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     }
 
     /**
+     * A per-test minimum carried by a worker log filters the merged file report.
+     */
+    public function testMergeKeepsPerTestMinimum(): void
+    {
+        $path = $this->directory.'/test-time.log';
+
+        new TestTimeReportWriter($path, 500, 0, 'worker-1')->report([
+            'allowed-test' => new TestTime(1.0, 2000),
+            'slow-test' => new TestTime(0.6),
+        ]);
+
+        $contents = (string) file_get_contents($path);
+
+        $this->assertStringNotContainsString('allowed-test', $contents);
+        $this->assertStringContainsString('slow-test', $contents);
+    }
+
+    /**
+     * A per-test minimum survives the merge even when it comes from another worker.
+     */
+    public function testMergeRetainsMinimumFromAnyWorker(): void
+    {
+        $path = $this->directory.'/test-time.log';
+
+        new TestTimeReportWriter($path, 500, 0, 'worker-1')->report(['shared-test' => new TestTime(1.0)]);
+        new TestTimeReportWriter($path, 500, 0, 'worker-2')->report(['shared-test' => new TestTime(1.0, 2000)]);
+
+        $contents = (string) file_get_contents($path);
+
+        $this->assertStringNotContainsString('shared-test', $contents);
+    }
+
+    /**
      * The merged durations are kept in a machine-readable accumulator.
      */
     public function testWritesMachineReadableAccumulator(): void
     {
         $path = $this->directory.'/test-time.log';
 
-        new TestTimeReportWriter($path, 0, 0, 'worker-1')->report(['shared-test' => 1.0]);
+        new TestTimeReportWriter($path, 0, 0, 'worker-1')->report(['shared-test' => new TestTime(1.0)]);
 
         $accumulator = $this->directory.'/test-time.json';
 
         $this->assertFileExists($accumulator);
         $this->assertSame(
-            ['shared-test' => 1.0],
+            ['shared-test' => ['duration' => 1.0, 'minimum' => null]],
+            json_decode((string) file_get_contents($accumulator), true),
+        );
+    }
+
+    /**
+     * The machine-readable accumulator keeps a per-test minimum.
+     */
+    public function testAccumulatorKeepsPerTestMinimum(): void
+    {
+        $path = $this->directory.'/test-time.log';
+
+        new TestTimeReportWriter($path, 0, 0, 'worker-1')->report(['shared-test' => new TestTime(1.0, 2000)]);
+
+        $accumulator = $this->directory.'/test-time.json';
+
+        $this->assertSame(
+            ['shared-test' => ['duration' => 1.0, 'minimum' => 2000]],
             json_decode((string) file_get_contents($accumulator), true),
         );
     }
@@ -154,7 +205,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/nested/deeper/test-time.log';
 
-        new TestTimeReportWriter($path)->report(['some-test' => 1.0]);
+        new TestTimeReportWriter($path)->report(['some-test' => new TestTime(1.0)]);
 
         $this->assertFileExists($path);
     }
@@ -166,7 +217,7 @@ final class TestTimeReportWriterTest extends AbstractTestCase
     {
         $path = $this->directory.'/test-time.log';
 
-        new TestTimeReportWriter($path, 0, 0, 'weird/token:1')->report(['some-test' => 1.0]);
+        new TestTimeReportWriter($path, 0, 0, 'weird/token:1')->report(['some-test' => new TestTime(1.0)]);
 
         $this->assertFileExists($path);
         $this->assertStringContainsString('some-test', (string) file_get_contents($path));
