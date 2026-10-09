@@ -4,22 +4,19 @@ declare(strict_types=1);
 
 namespace AncientWeb\PhpUnitTestTime\Tests;
 
-use AncientWeb\PhpUnitTestTime\Tests\Fixture\FacadeStub;
 use AncientWeb\PhpUnitTestTime\TestTimeExtension;
+use PHPUnit\Event\Test\PreparationErroredSubscriber;
 use PHPUnit\Runner\Extension\ParameterCollection;
 use PHPUnit\TextUI\Configuration\Configuration;
 use ReflectionClass;
 
 use function file_put_contents;
+use function interface_exists;
 use function time;
 use function touch;
 
 /**
  * Tests for extension registration and report path resolution.
- *
- * @internal
- *
- * @coversNothing
  */
 final class TestTimeExtensionTest extends AbstractTestCase
 {
@@ -44,35 +41,32 @@ final class TestTimeExtensionTest extends AbstractTestCase
     }
 
     /**
-     * Six subscribers are registered with the default settings.
+     * The subscribers are built with the default settings.
      */
-    public function testRegistersSixSubscribersByDefault(): void
+    public function testBuildsSubscribersByDefault(): void
     {
-        $facade = new FacadeStub();
-
-        new TestTimeExtension()->bootstrap(
+        $subscribers = new TestTimeExtension()->subscribers(
             $this->configuration(),
-            $facade,
             ParameterCollection::fromArray(['log-file' => $this->directory.'/test-time.log']),
         );
 
-        $this->assertCount(6, $facade->subscribers);
+        // PreparationErrored was introduced in PHPUnit 12.
+        $expected = interface_exists(PreparationErroredSubscriber::class) ? 6 : 5;
+
+        $this->assertCount($expected, $subscribers);
     }
 
     /**
-     * No subscribers are registered when both outputs are disabled.
+     * No subscribers are built when both outputs are disabled.
      */
-    public function testRegistersNoSubscribersWhenBothOutputsAreDisabled(): void
+    public function testBuildsNoSubscribersWhenBothOutputsAreDisabled(): void
     {
-        $facade = new FacadeStub();
-
-        new TestTimeExtension()->bootstrap(
+        $subscribers = new TestTimeExtension()->subscribers(
             $this->configuration(),
-            $facade,
             ParameterCollection::fromArray(['console' => 'false', 'log' => 'false']),
         );
 
-        $this->assertSame([], $facade->subscribers);
+        $this->assertSame([], $subscribers);
     }
 
     /**
@@ -84,9 +78,8 @@ final class TestTimeExtensionTest extends AbstractTestCase
         file_put_contents($path, 'stale');
         touch($path, time() - 3600);
 
-        new TestTimeExtension()->bootstrap(
+        new TestTimeExtension()->subscribers(
             $this->configuration(),
-            new FacadeStub(),
             ParameterCollection::fromArray(['log-file' => $path]),
         );
 
@@ -102,9 +95,8 @@ final class TestTimeExtensionTest extends AbstractTestCase
         file_put_contents($path, 'stale');
         touch($path, time() - 3600);
 
-        new TestTimeExtension()->bootstrap(
+        new TestTimeExtension()->subscribers(
             $this->configuration(),
-            new FacadeStub(),
             ParameterCollection::fromArray(['console' => 'false', 'log' => 'false']),
         );
 

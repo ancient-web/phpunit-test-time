@@ -17,6 +17,9 @@ return new Config()
         '@PSR12' => true,
         '@PhpCsFixer' => true,
         'declare_strict_types' => true,
+        // Metadata in doc-comments is deprecated by PHPUnit; do not add it.
+        'php_unit_internal_class' => false,
+        'php_unit_test_class_requires_covers' => false,
         'global_namespace_import' => [
             'import_classes' => true,
             'import_constants' => true,
@@ -29,4 +32,5 @@ return new Config()
         ],
         'phpdoc_align' => ['align' => 'left'],
     ])
-    ->setFinder($finder);
+    ->setFinder($finder)
+;

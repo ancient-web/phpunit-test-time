@@ -13,10 +13,6 @@ use function trim;
 
 /**
  * Tests for preparing and rendering the report.
- *
- * @internal
- *
- * @coversNothing
  */
 final class ReportTest extends AbstractTestCase
 {

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AncientWeb\PhpUnitTestTime;
 
-use PHPUnit\Event\Code\Test;
 use PHPUnit\Event\Telemetry\HRTime;
 
 use function array_values;
@@ -45,31 +44,29 @@ final class TestTimeCollector
     /**
      * Record the start of a test.
      *
-     * @param Test $test Test
+     * @param string $testId Test identifier
      * @param HRTime $time Start time
      */
-    public function start(Test $test, HRTime $time): void
+    public function start(string $testId, HRTime $time): void
     {
-        $this->started[$test->id()] = $time;
+        $this->started[$testId] = $time;
     }
 
     /**
      * Record the end of a test and compute its duration.
      *
-     * @param Test $test Test
+     * @param string $testId Test identifier
      * @param HRTime $time End time
      */
-    public function finish(Test $test, HRTime $time): void
+    public function finish(string $testId, HRTime $time): void
     {
-        $id = $test->id();
-
-        if (!isset($this->started[$id])) {
+        if (!isset($this->started[$testId])) {
             return;
         }
 
-        $this->durations[$id] = $time->duration($this->started[$id])->asFloat();
+        $this->durations[$testId] = $time->duration($this->started[$testId])->asFloat();
 
-        unset($this->started[$id]);
+        unset($this->started[$testId]);
     }
 
     /**

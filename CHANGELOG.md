@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Support `phpunit/phpunit` 10 through 13 (previously only 13).
 - Configure the extension exclusively through `phpunit.xml` `<parameter>` elements; the
   `MEASURE_TIME` and `MEASURE_TIME_LOG` environment variables were removed.
 

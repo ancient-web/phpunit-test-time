@@ -73,6 +73,10 @@ docker compose run --rm tests composer rector      # automated refactoring (Rect
   `setUp()/tearDown()` because the process is shared.
 - **Default log path:** the `log-file` parameter, otherwise `<getcwd()>/var/test-time.log` (the
   `var/` dir is gitignored).
+- **PHPUnit 10–13.** `PreparationErrored` was introduced in PHPUnit 12, so its subscriber is
+  registered only when the interface exists. The collector takes test id strings, not
+  `Event\Code\Test` objects, because that class is `readonly` only from PHPUnit 11 (a `readonly`
+  test stub cannot extend the non-readonly PHPUnit 10 class).
 - **Per-test overrides.** `MaximumDurationResolver::resolve()` reads a test's `#[MaximumDuration]`
   attribute (then the `@maximumDuration`, then the `@slowThreshold` annotation) from the
   `Class::method` part of its identifier, so the override survives the paratest merge. It only

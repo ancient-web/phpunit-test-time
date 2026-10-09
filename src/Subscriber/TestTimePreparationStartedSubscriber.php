@@ -27,6 +27,6 @@ final readonly class TestTimePreparationStartedSubscriber implements Preparation
     #[Override]
     public function notify(PreparationStarted $event): void
     {
-        $this->collector->start($event->test(), $event->telemetryInfo()->time());
+        $this->collector->start($event->test()->id(), $event->telemetryInfo()->time());
     }
 }

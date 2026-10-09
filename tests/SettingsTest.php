@@ -10,10 +10,6 @@ use PHPUnit\Runner\Extension\ParameterCollection;
 
 /**
  * Tests for parsing the extension settings.
- *
- * @internal
- *
- * @coversNothing
  */
 final class SettingsTest extends AbstractTestCase
 {

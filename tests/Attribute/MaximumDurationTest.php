@@ -10,10 +10,6 @@ use AncientWeb\PhpUnitTestTime\Tests\AbstractTestCase;
 
 /**
  * Tests for the MaximumDuration attribute.
- *
- * @internal
- *
- * @coversNothing
  */
 final class MaximumDurationTest extends AbstractTestCase
 {

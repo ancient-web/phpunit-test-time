@@ -9,10 +9,6 @@ use AncientWeb\PhpUnitTestTime\Tests\Fixture\MaximumDurationFixture;
 
 /**
  * Tests for resolving the per-test maximum duration.
- *
- * @internal
- *
- * @coversNothing
  */
 final class MaximumDurationResolverTest extends AbstractTestCase
 {

@@ -27,6 +27,6 @@ final readonly class TestTimePreparationFailedSubscriber implements PreparationF
     #[Override]
     public function notify(PreparationFailed $event): void
     {
-        $this->collector->finish($event->test(), $event->telemetryInfo()->time());
+        $this->collector->finish($event->test()->id(), $event->telemetryInfo()->time());
     }
 }

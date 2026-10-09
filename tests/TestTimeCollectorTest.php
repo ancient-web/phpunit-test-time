@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AncientWeb\PhpUnitTestTime\Tests;
 
-use AncientWeb\PhpUnitTestTime\Tests\Fixture\TestStub;
 use AncientWeb\PhpUnitTestTime\TestTimeCollector;
 use AncientWeb\PhpUnitTestTime\TestTimeReportWriter;
 use PHPUnit\Event\Telemetry\HRTime;
@@ -13,10 +12,6 @@ use function file_get_contents;
 
 /**
  * Tests for the test execution time collector.
- *
- * @internal
- *
- * @coversNothing
  */
 final class TestTimeCollectorTest extends AbstractTestCase
 {
@@ -27,16 +22,16 @@ final class TestTimeCollectorTest extends AbstractTestCase
     {
         $path = $this->directory.'/test-time.log';
         $collector = new TestTimeCollector(new TestTimeReportWriter($path));
-        $test = new TestStub('App\Tests\DemoTest::testSomething');
+        $testId = 'App\Tests\DemoTest::testSomething';
 
-        $collector->start($test, HRTime::fromSecondsAndNanoseconds(1, 0));
-        $collector->finish($test, HRTime::fromSecondsAndNanoseconds(3, 500000000));
+        $collector->start($testId, HRTime::fromSecondsAndNanoseconds(1, 0));
+        $collector->finish($testId, HRTime::fromSecondsAndNanoseconds(3, 500000000));
         $collector->writeReport();
 
         $contents = (string) file_get_contents($path);
 
         $this->assertStringContainsString('2.5000 s', $contents);
-        $this->assertStringContainsString('App\Tests\DemoTest::testSomething', $contents);
+        $this->assertStringContainsString($testId, $contents);
     }
 
     /**
@@ -47,7 +42,7 @@ final class TestTimeCollectorTest extends AbstractTestCase
         $path = $this->directory.'/test-time.log';
         $collector = new TestTimeCollector(new TestTimeReportWriter($path));
 
-        $collector->finish(new TestStub('orphan-test'), HRTime::fromSecondsAndNanoseconds(5, 0));
+        $collector->finish('orphan-test', HRTime::fromSecondsAndNanoseconds(5, 0));
         $collector->writeReport();
 
         $this->assertStringNotContainsString('orphan-test', (string) file_get_contents($path));
@@ -61,14 +56,12 @@ final class TestTimeCollectorTest extends AbstractTestCase
         $path = $this->directory.'/test-time.log';
         $collector = new TestTimeCollector(new TestTimeReportWriter($path));
 
-        $first = new TestStub('first-test');
-        $collector->start($first, HRTime::fromSecondsAndNanoseconds(1, 0));
-        $collector->finish($first, HRTime::fromSecondsAndNanoseconds(2, 0));
+        $collector->start('first-test', HRTime::fromSecondsAndNanoseconds(1, 0));
+        $collector->finish('first-test', HRTime::fromSecondsAndNanoseconds(2, 0));
         $collector->writeReport();
 
-        $second = new TestStub('second-test');
-        $collector->start($second, HRTime::fromSecondsAndNanoseconds(1, 0));
-        $collector->finish($second, HRTime::fromSecondsAndNanoseconds(2, 0));
+        $collector->start('second-test', HRTime::fromSecondsAndNanoseconds(1, 0));
+        $collector->finish('second-test', HRTime::fromSecondsAndNanoseconds(2, 0));
         $collector->writeReport();
 
         $contents = (string) file_get_contents($path);

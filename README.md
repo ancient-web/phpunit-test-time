@@ -9,6 +9,14 @@ logs are merged into a single report under an exclusive lock (for the same test 
 duration is kept). In parallel runs only the file log is produced — the console report is skipped,
 because every worker is a separate process.
 
+## Compatibility
+
+- PHP `^8.4`
+- `phpunit/phpunit` `^10.0 || ^11.0 || ^12.0 || ^13.0`
+
+On PHPUnit 10 and 11 the `PreparationErrored` subscriber is not registered, because that event was
+introduced in PHPUnit 12.
+
 ## Installation
 
 ```bash
@@ -105,3 +113,8 @@ docker compose run --rm tests composer it  # install dependencies and run the fu
 The quality pipeline runs coding standards (PHP-CS-Fixer), static analysis
 (PHPStan, level max), automated refactoring (Rector), and the test suite. See
 [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
+
+## Credits
+
+This project was inspired by
+[`ergebnis/phpunit-slow-test-detector`](https://github.com/ergebnis/phpunit-slow-test-detector).

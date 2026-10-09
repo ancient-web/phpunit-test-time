@@ -8,10 +8,6 @@ use AncientWeb\PhpUnitTestTime\Terminal;
 
 /**
  * Tests for detecting the terminal width.
- *
- * @internal
- *
- * @coversNothing
  */
 final class TerminalTest extends AbstractTestCase
 {

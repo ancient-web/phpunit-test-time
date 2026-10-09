@@ -27,6 +27,6 @@ final readonly class TestTimePreparationErroredSubscriber implements Preparation
     #[Override]
     public function notify(PreparationErrored $event): void
     {
-        $this->collector->finish($event->test(), $event->telemetryInfo()->time());
+        $this->collector->finish($event->test()->id(), $event->telemetryInfo()->time());
     }
 }

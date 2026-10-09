@@ -11,6 +11,8 @@ use AncientWeb\PhpUnitTestTime\Subscriber\TestTimePreparationErroredSubscriber;
 use AncientWeb\PhpUnitTestTime\Subscriber\TestTimePreparationFailedSubscriber;
 use AncientWeb\PhpUnitTestTime\Subscriber\TestTimePreparationStartedSubscriber;
 use Override;
+use PHPUnit\Event\Subscriber;
+use PHPUnit\Event\Test\PreparationErroredSubscriber;
 use PHPUnit\Runner\Extension\Extension;
 use PHPUnit\Runner\Extension\Facade;
 use PHPUnit\Runner\Extension\ParameterCollection;
@@ -18,6 +20,7 @@ use PHPUnit\TextUI\Configuration\Configuration;
 
 use function getenv;
 use function getmypid;
+use function interface_exists;
 
 /**
  * PHPUnit extension that measures the execution time of each test.
@@ -41,6 +44,27 @@ final class TestTimeExtension implements Extension
      */
     #[Override]
     public function bootstrap(Configuration $configuration, Facade $facade, ParameterCollection $parameters): void
+    {
+        $subscribers = $this->subscribers($configuration, $parameters);
+
+        if ([] === $subscribers) {
+            return;
+        }
+
+        $facade->registerSubscribers(...$subscribers);
+    }
+
+    /**
+     * Build the subscribers for the given configuration.
+     *
+     * @param Configuration $configuration PHPUnit configuration
+     * @param ParameterCollection $parameters Extension parameters
+     *
+     * @return array<int, Subscriber>
+     *
+     * @internal
+     */
+    public function subscribers(Configuration $configuration, ParameterCollection $parameters): array
     {
         $settings = Settings::fromParameters($parameters);
         $token = $this->resolveToken();
@@ -70,19 +94,25 @@ final class TestTimeExtension implements Extension
         }
 
         if ([] === $reporters) {
-            return;
+            return [];
         }
 
         $collector = new TestTimeCollector(...$reporters);
 
-        $facade->registerSubscribers(
+        $subscribers = [
             new TestTimePreparationStartedSubscriber($collector),
             new TestTimeFinishedSubscriber($collector),
-            new TestTimePreparationErroredSubscriber($collector),
             new TestTimePreparationFailedSubscriber($collector),
             new TestTimeExecutionFinishedSubscriber($collector),
             new TestTimeExecutionAbortedSubscriber($collector),
-        );
+        ];
+
+        // PreparationErrored was introduced in PHPUnit 12.
+        if (interface_exists(PreparationErroredSubscriber::class)) {
+            $subscribers[] = new TestTimePreparationErroredSubscriber($collector);
+        }
+
+        return $subscribers;
     }
 
     /**

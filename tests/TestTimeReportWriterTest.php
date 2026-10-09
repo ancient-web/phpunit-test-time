@@ -15,10 +15,6 @@ use function touch;
 
 /**
  * Tests for the test execution time report writer.
- *
- * @internal
- *
- * @coversNothing
  */
 final class TestTimeReportWriterTest extends AbstractTestCase
 {

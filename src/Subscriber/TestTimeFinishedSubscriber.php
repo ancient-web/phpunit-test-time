@@ -27,6 +27,6 @@ final readonly class TestTimeFinishedSubscriber implements FinishedSubscriber
     #[Override]
     public function notify(Finished $event): void
     {
-        $this->collector->finish($event->test(), $event->telemetryInfo()->time());
+        $this->collector->finish($event->test()->id(), $event->telemetryInfo()->time());
     }
 }
