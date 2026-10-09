@@ -7,20 +7,33 @@ own `phpunit.xml.dist`.
 
 ## Commands
 
-Run the suite with Docker (image is prebuilt; this is the reliable path — see Gotchas):
+> **Run every command inside the container.** Do not run `php`, `composer`, `vendor/bin/*`,
+> or any other tooling directly on the host — the host PHP lacks the required extensions.
+> Use `docker compose run --rm tests <command>` (or `docker compose build`).
+> The `tests` service live-mounts the repo and runs an entrypoint (`docker/entrypoint.sh`)
+> that reconciles `vendor/` with `composer.lock` on every `run` (a cheap, offline no-op
+> when unchanged), so dependencies live in the working copy and no volume is needed. It
+> runs as `${USER_ID:-1000}:${GROUP_ID:-1000}` so files written to the working copy are
+> owned by you, not root; override via `.env` (see `.env.example`).
+
+Run the suite with Docker (the entrypoint installs dependencies on the first run):
 
 ```bash
 docker compose run --rm tests                                              # full suite
 docker compose run --rm tests vendor/bin/phpunit --filter testName         # single test
 docker compose run --rm tests vendor/bin/phpunit tests/TestTimeCollectorTest.php
-docker compose build                                                       # after Dockerfile/composer.json changes
+docker compose build                                                       # only after Dockerfile changes
 ```
 
-`composer test` (runs `phpunit`) works only on a local PHP that has the `dom`, `mbstring`,
-`xmlwriter` extensions; e.g. `vendor/bin/phpunit --filter testName`.
+Quality tooling (all inside the container, via the `composer` scripts):
 
-There is no linter, static analysis, typecheck, CI, or codegen configured. The test suite is the
-only verification step.
+```bash
+docker compose run --rm tests composer it          # cs:check + stan + rector:check + test
+docker compose run --rm tests composer cs          # fix coding standards (PHP-CS-Fixer)
+docker compose run --rm tests composer cs:check    # check coding standards only
+docker compose run --rm tests composer stan        # static analysis (PHPStan, level max)
+docker compose run --rm tests composer rector      # automated refactoring (Rector)
+```
 
 ## Architecture
 

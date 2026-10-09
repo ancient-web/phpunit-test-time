@@ -65,16 +65,14 @@ Total tests: 3, total time: 4.5000 s
 
 ## Development
 
-Install dependencies and run the test suite with a local PHP 8.4+ that has the
-`dom`, `mbstring` and `xmlwriter` extensions:
+All commands run inside the container (no local PHP required):
 
 ```bash
-composer install
-composer test
+docker compose build                       # build the image (works offline)
+docker compose run --rm tests              # install dependencies and run the test suite
+docker compose run --rm tests composer it  # install dependencies and run the full pipeline
 ```
 
-Or run the tests in Docker (no local PHP required):
-
-```bash
-docker compose run --rm tests
-```
+The quality pipeline runs coding standards (PHP-CS-Fixer), static analysis
+(PHPStan, level max), automated refactoring (Rector), and the test suite. See
+[`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
