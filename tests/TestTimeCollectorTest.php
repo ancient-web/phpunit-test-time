@@ -4,25 +4,30 @@ declare(strict_types=1);
 
 namespace AncientWeb\PhpUnitTestTime\Tests;
 
-use function file_get_contents;
-use PHPUnit\Event\Telemetry\HRTime;
+use AncientWeb\PhpUnitTestTime\Tests\Fixture\TestStub;
 use AncientWeb\PhpUnitTestTime\TestTimeCollector;
 use AncientWeb\PhpUnitTestTime\TestTimeReportWriter;
-use AncientWeb\PhpUnitTestTime\Tests\Fixture\TestStub;
+use PHPUnit\Event\Telemetry\HRTime;
+
+use function file_get_contents;
 
 /**
- * Tests for the test execution time collector
+ * Tests for the test execution time collector.
+ *
+ * @internal
+ *
+ * @coversNothing
  */
 final class TestTimeCollectorTest extends AbstractTestCase
 {
     /**
-     * The duration is computed as the difference between start and finish
+     * The duration is computed as the difference between start and finish.
      */
     public function testFinishComputesDurationFromStartTime(): void
     {
-        $path = $this->directory . '/test-time.log';
+        $path = $this->directory.'/test-time.log';
         $collector = new TestTimeCollector(new TestTimeReportWriter($path));
-        $test = new TestStub('App\\Tests\\DemoTest::testSomething');
+        $test = new TestStub('App\Tests\DemoTest::testSomething');
 
         $collector->start($test, HRTime::fromSecondsAndNanoseconds(1, 0));
         $collector->finish($test, HRTime::fromSecondsAndNanoseconds(3, 500000000));
@@ -31,15 +36,15 @@ final class TestTimeCollectorTest extends AbstractTestCase
         $contents = (string) file_get_contents($path);
 
         $this->assertStringContainsString('2.5000 s', $contents);
-        $this->assertStringContainsString('App\\Tests\\DemoTest::testSomething', $contents);
+        $this->assertStringContainsString('App\Tests\DemoTest::testSomething', $contents);
     }
 
     /**
-     * A finish without a start is ignored
+     * A finish without a start is ignored.
      */
     public function testIgnoresFinishWithoutStart(): void
     {
-        $path = $this->directory . '/test-time.log';
+        $path = $this->directory.'/test-time.log';
         $collector = new TestTimeCollector(new TestTimeReportWriter($path));
 
         $collector->finish(new TestStub('orphan-test'), HRTime::fromSecondsAndNanoseconds(5, 0));
@@ -49,11 +54,11 @@ final class TestTimeCollectorTest extends AbstractTestCase
     }
 
     /**
-     * The report is written only once
+     * The report is written only once.
      */
     public function testWritesReportOnlyOnce(): void
     {
-        $path = $this->directory . '/test-time.log';
+        $path = $this->directory.'/test-time.log';
         $collector = new TestTimeCollector(new TestTimeReportWriter($path));
 
         $first = new TestStub('first-test');

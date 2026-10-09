@@ -4,36 +4,37 @@ declare(strict_types=1);
 
 namespace AncientWeb\PhpUnitTestTime;
 
-use function glob;
+use DateTimeImmutable;
+
+use function array_merge;
+use function array_sum;
 use function count;
+use function dirname;
+use function explode;
+use function fclose;
+use function file_get_contents;
+use function file_put_contents;
+use function filemtime;
 use function flock;
 use function fopen;
-use function mkdir;
-use function fclose;
 use function getenv;
+use function getmypid;
+use function glob;
+use function implode;
 use function is_dir;
+use function is_numeric;
+use function microtime;
+use function mkdir;
+use function preg_match;
+use function preg_replace;
+use function sprintf;
+use function str_ends_with;
 use function substr;
 use function uasort;
 use function unlink;
-use function dirname;
-use function explode;
-use function implode;
-use function sprintf;
-use DateTimeImmutable;
-use function getmypid;
-use function array_sum;
-use function filemtime;
-use function microtime;
-use function is_numeric;
-use function preg_match;
-use function array_merge;
-use function preg_replace;
-use function str_ends_with;
-use function file_get_contents;
-use function file_put_contents;
 
 /**
- * Builds the test execution time report
+ * Builds the test execution time report.
  *
  * In paratest mode each worker writes its own intermediate log under its token,
  * then all logs are merged into a shared report under an exclusive lock
@@ -44,12 +45,10 @@ final readonly class TestTimeReportWriter
     /**
      * @param string $reportPath Path to the shared report file
      */
-    public function __construct(private string $reportPath)
-    {
-    }
+    public function __construct(private string $reportPath) {}
 
     /**
-     * Remove reports from previous runs
+     * Remove reports from previous runs.
      *
      * Files created after the current process started are left untouched
      */
@@ -62,14 +61,14 @@ final readonly class TestTimeReportWriter
         foreach ($this->existingReportFiles() as $file) {
             $modifiedAt = @filemtime($file);
 
-            if ($modifiedAt !== false && $modifiedAt < $threshold) {
+            if (false !== $modifiedAt && $modifiedAt < $threshold) {
                 @unlink($file);
             }
         }
     }
 
     /**
-     * Write the current process report and merge it with reports of other processes
+     * Write the current process report and merge it with reports of other processes.
      *
      * @param array<string, float> $durations Test durations in seconds keyed by test identifier
      */
@@ -77,7 +76,7 @@ final readonly class TestTimeReportWriter
     {
         $token = $this->resolveToken();
 
-        if ($token === null) {
+        if (null === $token) {
             $this->writeFile($this->reportPath, $durations, 'Test execution time report');
 
             return;
@@ -89,7 +88,7 @@ final readonly class TestTimeReportWriter
     }
 
     /**
-     * Merge all worker reports into the shared file and remove intermediate logs
+     * Merge all worker reports into the shared file and remove intermediate logs.
      *
      * @param array<string, float> $durations Durations of the current worker
      */
@@ -101,7 +100,7 @@ final readonly class TestTimeReportWriter
 
         $handle = @fopen($this->reportPath, 'c');
 
-        if ($handle === false) {
+        if (false === $handle) {
             return;
         }
 
@@ -135,7 +134,7 @@ final readonly class TestTimeReportWriter
     }
 
     /**
-     * Add a test duration to the merged set, keeping the maximum value
+     * Add a test duration to the merged set, keeping the maximum value.
      *
      * @param array<string, float> $merged Merged set of durations
      * @param string $id Test identifier
@@ -149,7 +148,7 @@ final readonly class TestTimeReportWriter
     }
 
     /**
-     * Remove intermediate worker logs
+     * Remove intermediate worker logs.
      */
     private function removeTokenReports(): void
     {
@@ -159,7 +158,7 @@ final readonly class TestTimeReportWriter
     }
 
     /**
-     * Resolve the current worker token
+     * Resolve the current worker token.
      *
      * For paratest it is TEST_TOKEN, otherwise a unique worker token or the process pid
      */
@@ -167,17 +166,17 @@ final readonly class TestTimeReportWriter
     {
         $token = getenv('TEST_TOKEN');
 
-        if ($token !== false && $token !== '') {
+        if (false !== $token && '' !== $token) {
             return $token;
         }
 
         $token = getenv('UNIQUE_TEST_TOKEN');
 
-        if ($token !== false && $token !== '') {
+        if (false !== $token && '' !== $token) {
             return $token;
         }
 
-        if (getenv('PARATEST') !== false) {
+        if (false !== getenv('PARATEST')) {
             return (string) getmypid();
         }
 
@@ -185,7 +184,7 @@ final readonly class TestTimeReportWriter
     }
 
     /**
-     * Get the list of existing report files
+     * Get the list of existing report files.
      *
      * @return array<int, string>
      */
@@ -195,15 +194,15 @@ final readonly class TestTimeReportWriter
     }
 
     /**
-     * Get the list of worker report files
+     * Get the list of worker report files.
      *
      * @return array<int, string>
      */
     private function tokenReportFiles(): array
     {
-        $files = glob($this->basePath() . '.*.log');
+        $files = glob($this->basePath().'.*.log');
 
-        if ($files === false) {
+        if (false === $files) {
             return [];
         }
 
@@ -211,7 +210,7 @@ final readonly class TestTimeReportWriter
     }
 
     /**
-     * Get the path to a worker report file
+     * Get the path to a worker report file.
      *
      * @param string $token Worker token
      */
@@ -219,11 +218,11 @@ final readonly class TestTimeReportWriter
     {
         $safeToken = preg_replace('/[^A-Za-z0-9_.-]/', '_', $token) ?? 'worker';
 
-        return $this->basePath() . '.' . $safeToken . '.log';
+        return $this->basePath().'.'.$safeToken.'.log';
     }
 
     /**
-     * Get the report base path without extension
+     * Get the report base path without extension.
      */
     private function basePath(): string
     {
@@ -235,7 +234,7 @@ final readonly class TestTimeReportWriter
     }
 
     /**
-     * Create the report directory if it does not exist
+     * Create the report directory if it does not exist.
      *
      * @param string $directory Directory path
      */
@@ -245,11 +244,11 @@ final readonly class TestTimeReportWriter
             return true;
         }
 
-        return mkdir($directory, 0777, true) || is_dir($directory);
+        return mkdir($directory, 0o777, true) || is_dir($directory);
     }
 
     /**
-     * Write the report sorted by duration descending
+     * Write the report sorted by duration descending.
      *
      * @param string $path Report file path
      * @param array<string, float> $durations Test durations in seconds keyed by test identifier
@@ -270,16 +269,16 @@ final readonly class TestTimeReportWriter
         foreach ($durations as $id => $duration) {
             $lines[] = sprintf('%6d. %10.4f s  %s', $position, $duration, $id);
 
-            $position++;
+            ++$position;
         }
 
         $this->ensureDirectory(dirname($path));
 
-        file_put_contents($path, implode(PHP_EOL, $lines) . PHP_EOL);
+        file_put_contents($path, implode(PHP_EOL, $lines).PHP_EOL);
     }
 
     /**
-     * Read the report and get test durations
+     * Read the report and get test durations.
      *
      * @param string $path Report file path
      *
@@ -289,14 +288,14 @@ final readonly class TestTimeReportWriter
     {
         $contents = @file_get_contents($path);
 
-        if ($contents === false) {
+        if (false === $contents) {
             return [];
         }
 
         $durations = [];
 
         foreach (explode(PHP_EOL, $contents) as $line) {
-            if (preg_match('/^\s*\d+\.\s+([0-9]+\.[0-9]+) s  (.+)$/', $line, $matches) !== 1) {
+            if (1 !== preg_match('/^\s*\d+\.\s+([0-9]+\.[0-9]+) s  (.+)$/', $line, $matches)) {
                 continue;
             }
 

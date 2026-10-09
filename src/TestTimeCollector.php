@@ -8,7 +8,7 @@ use PHPUnit\Event\Code\Test;
 use PHPUnit\Event\Telemetry\HRTime;
 
 /**
- * Collects the execution duration of each test
+ * Collects the execution duration of each test.
  */
 final class TestTimeCollector
 {
@@ -23,19 +23,17 @@ final class TestTimeCollector
     private array $durations = [];
 
     /**
-     * Whether the report has already been written
+     * Whether the report has already been written.
      */
     private bool $written = false;
 
     /**
      * @param TestTimeReportWriter $reportWriter Report writer
      */
-    public function __construct(private readonly TestTimeReportWriter $reportWriter)
-    {
-    }
+    public function __construct(private readonly TestTimeReportWriter $reportWriter) {}
 
     /**
-     * Record the start of a test
+     * Record the start of a test.
      *
      * @param Test $test Test
      * @param HRTime $time Start time
@@ -46,7 +44,7 @@ final class TestTimeCollector
     }
 
     /**
-     * Record the end of a test and compute its duration
+     * Record the end of a test and compute its duration.
      *
      * @param Test $test Test
      * @param HRTime $time End time
@@ -65,7 +63,7 @@ final class TestTimeCollector
     }
 
     /**
-     * Write the final report
+     * Write the final report.
      */
     public function writeReport(): void
     {

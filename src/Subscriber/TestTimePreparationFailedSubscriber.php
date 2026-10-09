@@ -4,25 +4,23 @@ declare(strict_types=1);
 
 namespace AncientWeb\PhpUnitTestTime\Subscriber;
 
+use AncientWeb\PhpUnitTestTime\TestTimeCollector;
 use Override;
 use PHPUnit\Event\Test\PreparationFailed;
-use AncientWeb\PhpUnitTestTime\TestTimeCollector;
 use PHPUnit\Event\Test\PreparationFailedSubscriber;
 
 /**
- * Records the time of a test that failed preparation
+ * Records the time of a test that failed preparation.
  */
 final readonly class TestTimePreparationFailedSubscriber implements PreparationFailedSubscriber
 {
     /**
      * @param TestTimeCollector $collector Test execution time collector
      */
-    public function __construct(private TestTimeCollector $collector)
-    {
-    }
+    public function __construct(private TestTimeCollector $collector) {}
 
     /**
-     * Handle the test preparation failed event
+     * Handle the test preparation failed event.
      *
      * @param PreparationFailed $event PHPUnit event
      */

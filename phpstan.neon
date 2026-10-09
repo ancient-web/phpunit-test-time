@@ -1,0 +1,23 @@
+includes:
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+
+parameters:
+    level: max
+    paths:
+        - src
+        - tests
+        - .php-cs-fixer.php
+        - rector.php
+    tmpDir: .build/phpstan
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: true
+    ignoreErrors:
+        # PHPUnit assertion methods are static; the idiomatic `$this->assertX()`
+        # call is a deliberate dynamic call and is not a problem in tests.
+        -
+            identifier: staticMethod.dynamicCall
+            paths:
+                - tests

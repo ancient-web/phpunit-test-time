@@ -7,12 +7,16 @@ namespace AncientWeb\PhpUnitTestTime\Tests\Fixture;
 use PHPUnit\Event\Code\Test;
 
 /**
- * Test stub with a given identifier used to test the time collector
+ * Test stub with a given identifier used to test the time collector.
+ *
+ * @internal
+ *
+ * @coversNothing
  */
 final readonly class TestStub extends Test
 {
     /**
-     * @param string $testId Test identifier
+     * @param non-empty-string $testId Test identifier
      */
     public function __construct(private string $testId)
     {
@@ -20,7 +24,7 @@ final readonly class TestStub extends Test
     }
 
     /**
-     * Get the test identifier
+     * Get the test identifier.
      */
     public function id(): string
     {
@@ -28,7 +32,7 @@ final readonly class TestStub extends Test
     }
 
     /**
-     * Get the test name
+     * Get the test name.
      */
     public function name(): string
     {
@@ -36,7 +40,7 @@ final readonly class TestStub extends Test
     }
 
     /**
-     * Get the stable identifier used for sorting
+     * Get the stable identifier used for sorting.
      */
     public function sortId(): string
     {
