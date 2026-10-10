@@ -2,6 +2,8 @@ services:
   tests:
     build:
       context: .
+      args:
+        PHP_VERSION: "${PHP_VERSION:-8.5}"
     image: ancient-web/phpunit-test-time
     working_dir: /app
     # Run as the host user so files written to the live-mounted working copy

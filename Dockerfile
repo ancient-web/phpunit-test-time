@@ -1,4 +1,7 @@
-FROM php:8.5-cli
+# PHP version to build for. Override it to test the other supported versions:
+#   PHP_VERSION=8.1 docker compose build
+ARG PHP_VERSION=8.5
+FROM php:${PHP_VERSION}-cli
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

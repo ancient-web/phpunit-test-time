@@ -40,6 +40,25 @@ docker compose run --rm tests composer ci          # it + coverage + audit
 docker compose run --rm tests composer phar        # build the distributable PHAR
 ```
 
+The image builds from `php:${PHP_VERSION}-cli` (default `8.5`); override it with the
+`PHP_VERSION` build argument (`PHP_VERSION=8.1 docker compose build`). Run the full
+pipeline on the default image and the test suite on each supported version:
+
+```bash
+docker compose run --rm tests composer it          # full pipeline (newest PHP)
+
+for version in 8.1 8.2 8.3 8.4 8.5; do
+  PHP_VERSION="${version}" docker compose build
+  docker compose run --rm --entrypoint sh tests -c 'composer update --no-interaction && composer test'
+done
+PHP_VERSION=8.5 docker compose build               # restore the default image
+```
+
+`composer.lock` is gitignored, so each version resolves its own deps (PHPUnit 10 on 8.1 …
+13 on 8.4+); the `--entrypoint sh` override re-resolves instead of reusing another
+version's lock. PHPStan needs the newest PHPUnit classes, so it runs on the default image
+only.
+
 ## Architecture
 
 - `src/TestTimeExtension.php` — PHPUnit `Extension`; on `bootstrap()` parses `Settings`, resolves

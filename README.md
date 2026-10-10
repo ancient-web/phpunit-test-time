@@ -214,6 +214,38 @@ is offline-friendly; `composer coverage` needs a coverage driver (none is bundle
 `composer audit`/`composer ci` need network access. See
 [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
 
+### Testing across PHP versions
+
+The image is built from `php:${PHP_VERSION}-cli` (default `8.5`). Override the version with the
+`PHP_VERSION` build argument:
+
+```bash
+PHP_VERSION=8.1 docker compose build
+docker compose run --rm --entrypoint php tests -v   # PHP 8.1.34
+```
+
+`composer.lock` is gitignored, so each PHP version resolves its own dependencies (PHPUnit 10 on
+8.1, 11 on 8.2, 12 on 8.3, 13 on 8.4+). Run the **full pipeline on the default (newest) image**,
+and the **test suite on every supported version**:
+
+```bash
+# Full quality pipeline: coding standards + PHPStan + Rector + tests
+docker compose run --rm tests composer it
+
+# Compatibility matrix: the test suite on each supported PHP version (needs network)
+for version in 8.1 8.2 8.3 8.4 8.5; do
+  echo "== PHP ${version} =="
+  PHP_VERSION="${version}" docker compose build
+  docker compose run --rm --entrypoint sh tests -c 'composer update --no-interaction && composer test'
+done
+PHP_VERSION=8.5 docker compose build   # restore the default image
+```
+
+The `--entrypoint` override re-resolves dependencies for the selected version instead of reusing
+a `composer.lock` that was written for another one. Static analysis needs the PHPUnit classes of
+the newest version (for example `PreparationErrored` only exists from PHPUnit 12), so it runs on
+the default image; older versions are covered by the test suite.
+
 `composer phar` builds `build/phpunit-test-time.phar`, a self-contained bundle whose stub
 registers an autoloader for the `AncientWeb\PhpUnitTestTime\` namespace. `require` it from your
 PHPUnit bootstrap if you cannot use Composer autoloading for this package:

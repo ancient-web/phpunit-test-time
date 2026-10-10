@@ -40,6 +40,26 @@ docker compose run --rm tests composer cs
 docker compose run --rm tests composer rector
 ```
 
+## Testing across PHP versions
+
+The image is built from `php:${PHP_VERSION}-cli` (default `8.5`); override it with the
+`PHP_VERSION` build argument. Run the full pipeline on the default (newest) image and the test
+suite on every supported version:
+
+```bash
+docker compose run --rm tests composer it   # full pipeline (newest PHP)
+
+for version in 8.1 8.2 8.3 8.4 8.5; do
+  PHP_VERSION="${version}" docker compose build
+  docker compose run --rm --entrypoint sh tests -c 'composer update --no-interaction && composer test'
+done
+PHP_VERSION=8.5 docker compose build        # restore the default image
+```
+
+`composer.lock` is gitignored, so the `--entrypoint` override re-resolves dependencies for the
+selected version (PHPUnit 10 on 8.1 … 13 on 8.4+). Static analysis needs the newest PHPUnit
+classes, so it runs only on the default image.
+
 ## Pull requests
 
 - Keep the change focused and describe the motivation.
