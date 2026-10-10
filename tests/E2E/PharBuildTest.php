@@ -16,7 +16,7 @@ final class PharBuildTest extends AbstractEndToEndTestCase
      */
     public function testBuildsAPharThatAutoloadsTheExtension(): void
     {
-        $root = \dirname(__DIR__, 2);
+        $root = dirname(__DIR__, 2);
         $pharPath = $this->directory . '/phpunit-test-time.phar';
 
         $build = $this->runCommand([PHP_BINARY, '-d', 'phar.readonly=0', $root . '/bin/build-phar.php', $pharPath]);
@@ -24,11 +24,11 @@ final class PharBuildTest extends AbstractEndToEndTestCase
         $this->assertSame(0, $build['exitCode'], $build['error']);
         $this->assertFileExists($pharPath);
 
-        $code = \sprintf(
+        $code = sprintf(
             'require %s; require %s; echo (new ReflectionClass(%s))->getFileName();',
-            \var_export($root . '/vendor/autoload.php', true),
-            \var_export($pharPath, true),
-            \var_export(TestTimeExtension::class, true),
+            var_export($root . '/vendor/autoload.php', true),
+            var_export($pharPath, true),
+            var_export(TestTimeExtension::class, true),
         );
 
         $verify = $this->runCommand([PHP_BINARY, '-r', $code]);

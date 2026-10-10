@@ -19,7 +19,7 @@ final class InvalidParameter extends InvalidArgumentException
      */
     public static function notABoolean(string $name, string $value): self
     {
-        return new self(\sprintf('The value "%s" of the parameter "%s" is not a boolean.', $value, $name));
+        return new self(sprintf('The value "%s" of the parameter "%s" is not a boolean.', $value, $name));
     }
 
     /**
@@ -30,7 +30,7 @@ final class InvalidParameter extends InvalidArgumentException
      */
     public static function notANonNegativeInteger(string $name, string $value): self
     {
-        return new self(\sprintf('The value "%s" of the parameter "%s" is not a non-negative integer.', $value, $name));
+        return new self(sprintf('The value "%s" of the parameter "%s" is not a non-negative integer.', $value, $name));
     }
 
     /**
@@ -40,6 +40,6 @@ final class InvalidParameter extends InvalidArgumentException
      */
     public static function notAnAllowedCsvSeparator(string $value): self
     {
-        return new self(\sprintf('The value "%s" is not an allowed CSV separator.', $value));
+        return new self(sprintf('The value "%s" is not an allowed CSV separator.', $value));
     }
 }

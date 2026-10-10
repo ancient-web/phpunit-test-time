@@ -10,7 +10,7 @@ use AncientWeb\PhpUnitTestTime\TestTime;
 use DateTimeImmutable;
 use Override;
 
-final readonly class LogReporter extends AbstractFileReporter
+final class LogReporter extends AbstractFileReporter
 {
     /**
      * @param string $reportPath Path to the shared report file
@@ -21,8 +21,8 @@ final readonly class LogReporter extends AbstractFileReporter
     public function __construct(
         string $reportPath,
         ?string $token = null,
-        private int $minimumDuration = 0,
-        private int $maximumCount = 0,
+        private readonly int $minimumDuration = 0,
+        private readonly int $maximumCount = 0,
     ) {
         parent::__construct($reportPath, $token);
     }
@@ -40,11 +40,11 @@ final readonly class LogReporter extends AbstractFileReporter
             ->withMaximumCount($this->maximumCount)
         ;
 
-        $this->ensureDirectory(\dirname($this->reportPath));
+        $this->ensureDirectory(dirname($this->reportPath));
 
         $contents = $report->toText('Test execution time report', new DateTimeImmutable());
 
-        if (\file_put_contents($this->reportPath, $contents) === false) {
+        if (file_put_contents($this->reportPath, $contents) === false) {
             throw ReportWriteFailed::write($this->reportPath);
         }
     }

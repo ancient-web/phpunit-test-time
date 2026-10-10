@@ -13,12 +13,12 @@ use Override;
 /**
  * Writes the test execution time report as CSV.
  */
-final readonly class CsvReporter extends AbstractFileReporter
+final class CsvReporter extends AbstractFileReporter
 {
     /**
      * The separators accepted from the "csv-separator" parameter.
      */
-    private const string ALLOWED_SEPARATOR = '/^[,;|:\t]$/';
+    private const ALLOWED_SEPARATOR = '/^[,;|:\t]$/';
 
     /**
      * @param string $reportPath Path to the shared report file
@@ -30,11 +30,11 @@ final readonly class CsvReporter extends AbstractFileReporter
     public function __construct(
         string $reportPath,
         ?string $token = null,
-        private int $minimumDuration = 0,
-        private int $maximumCount = 0,
-        private string $separator = ';',
+        private readonly int $minimumDuration = 0,
+        private readonly int $maximumCount = 0,
+        private readonly string $separator = ';',
     ) {
-        if (\preg_match(self::ALLOWED_SEPARATOR, $separator) !== 1) {
+        if (preg_match(self::ALLOWED_SEPARATOR, $separator) !== 1) {
             throw InvalidParameter::notAnAllowedCsvSeparator($separator);
         }
 
@@ -54,21 +54,21 @@ final readonly class CsvReporter extends AbstractFileReporter
             ->withMaximumCount($this->maximumCount)
         ;
 
-        $this->ensureDirectory(\dirname($this->reportPath));
+        $this->ensureDirectory(dirname($this->reportPath));
 
-        $file = \fopen($this->reportPath, 'w');
+        $file = fopen($this->reportPath, 'w');
 
         if ($file === false) {
             throw ReportWriteFailed::write($this->reportPath);
         }
 
-        \fputcsv($file, ['Test case', 'Execution time (s)'], $this->separator, escape: '\\');
+        fputcsv($file, ['Test case', 'Execution time (s)'], $this->separator, escape: '\\');
 
         foreach ($report->sortedDescending() as $id => $testTime) {
-            \fputcsv($file, [$id, \sprintf('%0.4f', $testTime->seconds)], $this->separator, escape: '\\');
+            fputcsv($file, [$id, sprintf('%0.4f', $testTime->seconds)], $this->separator, escape: '\\');
         }
 
-        if (\fclose($file) === false) {
+        if (fclose($file) === false) {
             throw ReportWriteFailed::write($this->reportPath);
         }
     }

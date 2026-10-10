@@ -12,13 +12,13 @@ use PHPUnit\Event\Test\FinishedSubscriber;
 /**
  * Records the test end time and stores its duration.
  */
-final readonly class TestTimeFinishedSubscriber implements FinishedSubscriber
+final class TestTimeFinishedSubscriber implements FinishedSubscriber
 {
     /**
      * @param TestTimeCollector $collector Test execution time collector
      */
     public function __construct(
-        private TestTimeCollector $collector
+        private readonly TestTimeCollector $collector
     ) {
     }
 

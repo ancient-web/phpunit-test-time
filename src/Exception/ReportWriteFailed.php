@@ -18,7 +18,7 @@ final class ReportWriteFailed extends RuntimeException
      */
     public static function directory(string $directory): self
     {
-        return new self(\sprintf('Unable to create the report directory "%s".', $directory));
+        return new self(sprintf('Unable to create the report directory "%s".', $directory));
     }
 
     /**
@@ -28,7 +28,7 @@ final class ReportWriteFailed extends RuntimeException
      */
     public static function open(string $path): self
     {
-        return new self(\sprintf('Unable to open the report file "%s".', $path));
+        return new self(sprintf('Unable to open the report file "%s".', $path));
     }
 
     /**
@@ -38,7 +38,7 @@ final class ReportWriteFailed extends RuntimeException
      */
     public static function lock(string $path): self
     {
-        return new self(\sprintf('Unable to lock the report file "%s".', $path));
+        return new self(sprintf('Unable to lock the report file "%s".', $path));
     }
 
     /**
@@ -48,6 +48,6 @@ final class ReportWriteFailed extends RuntimeException
      */
     public static function write(string $path): self
     {
-        return new self(\sprintf('Unable to write the report file "%s".', $path));
+        return new self(sprintf('Unable to write the report file "%s".', $path));
     }
 }

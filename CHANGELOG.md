@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Coding standards are now enforced with Easy Coding Standard (ECS) instead of PHP-CS-Fixer; the
   `composer cs` and `composer cs:check` scripts are unchanged.
+- The minimum supported PHP version is now 8.1 (the lowest supported by `phpunit/phpunit` 10); the
+  code no longer requires PHP 8.2+ syntax.
 
 ## [2.1.0] - 2026-10-09
 

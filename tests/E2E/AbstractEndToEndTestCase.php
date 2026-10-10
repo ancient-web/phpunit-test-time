@@ -49,17 +49,17 @@ abstract class AbstractEndToEndTestCase extends AbstractTestCase
     {
         $testsDirectory = $this->directory . '/tests';
 
-        if (! \is_dir($testsDirectory)) {
-            \mkdir($testsDirectory, 0o777, true);
+        if (! is_dir($testsDirectory)) {
+            mkdir($testsDirectory, 0o777, true);
         }
 
         foreach ($sources as $name => $source) {
-            \file_put_contents($testsDirectory . '/' . $name, $source);
+            file_put_contents($testsDirectory . '/' . $name, $source);
         }
 
         $configPath = $this->directory . '/phpunit.xml';
 
-        \file_put_contents($configPath, $this->configurationXml($parameters, $testsDirectory));
+        file_put_contents($configPath, $this->configurationXml($parameters, $testsDirectory));
 
         return $configPath;
     }
@@ -100,14 +100,14 @@ abstract class AbstractEndToEndTestCase extends AbstractTestCase
      */
     protected function finish(array $process): array
     {
-        $output = (string) \stream_get_contents($process['stdout']);
-        $error = (string) \stream_get_contents($process['stderr']);
+        $output = (string) stream_get_contents($process['stdout']);
+        $error = (string) stream_get_contents($process['stderr']);
 
-        \fclose($process['stdout']);
-        \fclose($process['stderr']);
+        fclose($process['stdout']);
+        fclose($process['stderr']);
 
         return [
-            'exitCode' => \proc_close($process['process']),
+            'exitCode' => proc_close($process['process']),
             'output' => $output,
             'error' => $error,
         ];
@@ -128,7 +128,7 @@ abstract class AbstractEndToEndTestCase extends AbstractTestCase
             2 => ['pipe', 'w'],
         ];
 
-        $process = \proc_open(
+        $process = proc_open(
             $command,
             $descriptors,
             $pipes,
@@ -136,7 +136,7 @@ abstract class AbstractEndToEndTestCase extends AbstractTestCase
             $this->environment($environment),
         );
 
-        if (! \is_resource($process)) {
+        if (! is_resource($process)) {
             throw new RuntimeException('Unable to start a child process');
         }
 
@@ -158,10 +158,10 @@ abstract class AbstractEndToEndTestCase extends AbstractTestCase
         $parameterLines = '';
 
         foreach ($parameters as $name => $value) {
-            $parameterLines .= \sprintf(
+            $parameterLines .= sprintf(
                 '      <parameter name="%s" value="%s"/>' . PHP_EOL,
-                \htmlspecialchars($name),
-                \htmlspecialchars($value),
+                htmlspecialchars($name),
+                htmlspecialchars($value),
             );
         }
 
@@ -181,11 +181,11 @@ abstract class AbstractEndToEndTestCase extends AbstractTestCase
             </phpunit>
             XML;
 
-        return \sprintf(
+        return sprintf(
             $template,
-            \htmlspecialchars(\dirname(__DIR__, 2) . '/vendor/autoload.php'),
-            \htmlspecialchars($this->directory . '/.phpunit.cache'),
-            \htmlspecialchars($testsDirectory),
+            htmlspecialchars(dirname(__DIR__, 2) . '/vendor/autoload.php'),
+            htmlspecialchars($this->directory . '/.phpunit.cache'),
+            htmlspecialchars($testsDirectory),
             TestTimeExtension::class,
             $parameterLines,
         );
@@ -203,7 +203,7 @@ abstract class AbstractEndToEndTestCase extends AbstractTestCase
     {
         return [
             PHP_BINARY,
-            \dirname(__DIR__, 2) . '/vendor/bin/phpunit',
+            dirname(__DIR__, 2) . '/vendor/bin/phpunit',
             '--configuration',
             $configPath,
             '--colors=never',
@@ -222,9 +222,9 @@ abstract class AbstractEndToEndTestCase extends AbstractTestCase
      */
     private function environment(array $environment): array
     {
-        $inherited = \getenv();
+        $inherited = getenv();
 
-        if (! \is_array($inherited)) {
+        if (! is_array($inherited)) {
             $inherited = [];
         }
 
@@ -232,6 +232,6 @@ abstract class AbstractEndToEndTestCase extends AbstractTestCase
 
         $inherited['COLUMNS'] = '80';
 
-        return \array_merge($inherited, $environment);
+        return array_merge($inherited, $environment);
     }
 }

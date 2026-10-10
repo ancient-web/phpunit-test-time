@@ -15,7 +15,7 @@ final class MaximumDurationResolver
     /**
      * Doc-block annotations accepted for backwards compatibility.
      */
-    private const array ANNOTATIONS = ['maximumDuration', 'slowThreshold'];
+    private const ANNOTATIONS = ['maximumDuration', 'slowThreshold'];
 
     /**
      * Resolve the maximum duration in milliseconds for a test identifier, or null.
@@ -40,16 +40,16 @@ final class MaximumDurationResolver
      */
     private static function methodFor(string $testId): ?ReflectionMethod
     {
-        if (! \str_contains($testId, '::')) {
+        if (! str_contains($testId, '::')) {
             return null;
         }
 
-        [$class, $rest] = \explode('::', $testId, 2);
+        [$class, $rest] = explode('::', $testId, 2);
 
-        $parts = \preg_split('/[ #]/', $rest, 2);
+        $parts = preg_split('/[ #]/', $rest, 2);
         $name = $parts === false || $parts === [] ? $rest : $parts[0];
 
-        if (! \method_exists($class, $name)) {
+        if (! method_exists($class, $name)) {
             return null;
         }
 
@@ -86,7 +86,7 @@ final class MaximumDurationResolver
         }
 
         foreach (self::ANNOTATIONS as $annotation) {
-            if (\preg_match('/@' . $annotation . '\s+(\d+)/', $docComment, $matches) !== 1) {
+            if (preg_match('/@' . $annotation . '\s+(\d+)/', $docComment, $matches) !== 1) {
                 continue;
             }
 

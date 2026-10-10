@@ -12,13 +12,13 @@ use PHPUnit\Event\Test\PreparationStartedSubscriber;
 /**
  * Records the start time of test preparation before execution.
  */
-final readonly class TestTimePreparationStartedSubscriber implements PreparationStartedSubscriber
+final class TestTimePreparationStartedSubscriber implements PreparationStartedSubscriber
 {
     /**
      * @param TestTimeCollector $collector Test execution time collector
      */
     public function __construct(
-        private TestTimeCollector $collector
+        private readonly TestTimeCollector $collector
     ) {
     }
 

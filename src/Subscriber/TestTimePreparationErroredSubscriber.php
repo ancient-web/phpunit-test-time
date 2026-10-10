@@ -12,13 +12,13 @@ use PHPUnit\Event\Test\PreparationErroredSubscriber;
 /**
  * Records the time of a test that errored during preparation.
  */
-final readonly class TestTimePreparationErroredSubscriber implements PreparationErroredSubscriber
+final class TestTimePreparationErroredSubscriber implements PreparationErroredSubscriber
 {
     /**
      * @param TestTimeCollector $collector Test execution time collector
      */
     public function __construct(
-        private TestTimeCollector $collector
+        private readonly TestTimeCollector $collector
     ) {
     }
 

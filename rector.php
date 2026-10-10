@@ -14,7 +14,7 @@ return RectorConfig::configure()
     ->withSkip([
         __DIR__ . '/tests/Fixture',
     ])
-    ->withPhpSets(php84: true)
+    ->withPhpSets(php81: true)
     ->withPreparedSets(
         deadCode: true,
         codeQuality: true,

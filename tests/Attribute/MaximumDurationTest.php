@@ -18,7 +18,7 @@ final class MaximumDurationTest extends AbstractTestCase
      */
     public function testExposesMilliseconds(): void
     {
-        $this->assertSame(1500, new MaximumDuration(1500)->milliseconds);
+        $this->assertSame(1500, (new MaximumDuration(1500))->milliseconds);
     }
 
     /**

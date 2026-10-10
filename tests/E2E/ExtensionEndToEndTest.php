@@ -70,7 +70,7 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
         $line = $this->lineContaining($result['output'], 'Ancient');
 
         $this->assertNotSame('', $line);
-        $this->assertLessThanOrEqual(40, \mb_strlen($line));
+        $this->assertLessThanOrEqual(40, mb_strlen($line));
         $this->assertStringContainsString('...', $line);
         $this->assertStringNotContainsString('testMethodWithAnExtremelyLongName', $line);
     }
@@ -134,7 +134,7 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
         $this->assertSame(0, $result['exitCode'], $result['error']);
         $this->assertFileExists($path);
 
-        $contents = (string) \file_get_contents($path);
+        $contents = (string) file_get_contents($path);
 
         $this->assertStringContainsString('testSlowTest', $contents);
         $this->assertStringNotContainsString('testFastTest', $contents);
@@ -163,11 +163,11 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
         $this->assertSame(0, $result['exitCode'], $result['error']);
         $this->assertFileExists($path);
 
-        $contents = (string) \file_get_contents($path);
+        $contents = (string) file_get_contents($path);
 
         $this->assertSame(
             ['Test case', 'Execution time (s)'],
-            \str_getcsv(\explode(PHP_EOL, $contents)[0], '|', '"', '\\'),
+            str_getcsv(explode(PHP_EOL, $contents)[0], '|', '"', '\\'),
         );
         $this->assertStringContainsString('testSlowTest', $contents);
         $this->assertStringNotContainsString('testFastTest', $contents);
@@ -225,7 +225,7 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
 
         $this->assertFileExists($path);
 
-        $contents = (string) \file_get_contents($path);
+        $contents = (string) file_get_contents($path);
 
         $this->assertStringContainsString('testShared', $contents);
         $this->assertStringContainsString('0.5', $contents);
@@ -268,7 +268,7 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
         $this->assertSame(0, $first['exitCode'], $first['error']);
         $this->assertSame(0, $second['exitCode'], $second['error']);
 
-        $contents = (string) \file_get_contents($path);
+        $contents = (string) file_get_contents($path);
 
         $this->assertStringContainsString('testShared', $contents);
         $this->assertStringContainsString('0.5', $contents);
@@ -312,8 +312,8 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
         $this->assertSame(0, $first['exitCode'], $first['error']);
         $this->assertSame(0, $second['exitCode'], $second['error']);
 
-        $log = (string) \file_get_contents($logPath);
-        $csv = (string) \file_get_contents($csvPath);
+        $log = (string) file_get_contents($logPath);
+        $csv = (string) file_get_contents($csvPath);
 
         $this->assertStringContainsString('testShared', $log);
         $this->assertStringContainsString('0.5', $log);
@@ -335,7 +335,7 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
      */
     private function consoleOnly(array $parameters = []): array
     {
-        return \array_merge([
+        return array_merge([
             'console' => 'true',
             'log' => 'false',
         ], $parameters);
@@ -349,8 +349,8 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
      */
     private function lineContaining(string $text, string $needle): string
     {
-        foreach (\explode(PHP_EOL, $text) as $line) {
-            if (\str_contains($line, $needle)) {
+        foreach (explode(PHP_EOL, $text) as $line) {
+            if (str_contains($line, $needle)) {
                 return $line;
             }
         }

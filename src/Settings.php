@@ -10,7 +10,7 @@ use PHPUnit\Runner\Extension\ParameterCollection;
 /**
  * Extension configuration parsed from the phpunit.xml parameters.
  */
-final readonly class Settings
+final class Settings
 {
     /**
      * @param bool $console Whether to print the report to the console
@@ -23,19 +23,19 @@ final readonly class Settings
      * @param int $logCount Maximum number of tests in the file log (0 = unlimited)
      */
     public function __construct(
-        public bool $console = true,
-        public int $consoleMinimumDuration = 500,
-        public int $consoleCount = 10,
-        public int $consoleMaximumWidth = 0,
-        public bool $log = false,
-        public string $logPath = '',
-        public int $logMinimumDuration = 0,
-        public int $logCount = 0,
-        public bool $csv = false,
-        public string $csvPath = '',
-        public int $csvMinimumDuration = 0,
-        public int $csvCount = 0,
-        public string $csvSeparator = ';',
+        public readonly bool $console = true,
+        public readonly int $consoleMinimumDuration = 500,
+        public readonly int $consoleCount = 10,
+        public readonly int $consoleMaximumWidth = 0,
+        public readonly bool $log = false,
+        public readonly string $logPath = '',
+        public readonly int $logMinimumDuration = 0,
+        public readonly int $logCount = 0,
+        public readonly bool $csv = false,
+        public readonly string $csvPath = '',
+        public readonly int $csvMinimumDuration = 0,
+        public readonly int $csvCount = 0,
+        public readonly string $csvSeparator = ';',
     ) {
     }
 
@@ -78,11 +78,11 @@ final readonly class Settings
 
         $value = $parameters->get($name);
 
-        if (\in_array(\strtolower($value), ['1', 'true', 'yes', 'on'], true)) {
+        if (in_array(strtolower($value), ['1', 'true', 'yes', 'on'], true)) {
             return true;
         }
 
-        if (\in_array(\strtolower($value), ['0', 'false', 'no', 'off'], true)) {
+        if (in_array(strtolower($value), ['0', 'false', 'no', 'off'], true)) {
             return false;
         }
 
@@ -104,7 +104,7 @@ final readonly class Settings
 
         $value = $parameters->get($name);
 
-        if (\preg_match('/^\d+$/', $value) !== 1) {
+        if (preg_match('/^\d+$/', $value) !== 1) {
             throw InvalidParameter::notANonNegativeInteger($name, $value);
         }
 
@@ -129,7 +129,7 @@ final readonly class Settings
             return Terminal::width();
         }
 
-        if (\preg_match('/^\d+$/', $value) !== 1) {
+        if (preg_match('/^\d+$/', $value) !== 1) {
             throw InvalidParameter::notANonNegativeInteger($name, $value);
         }
 
@@ -157,7 +157,7 @@ final readonly class Settings
      */
     private static function defaultLogPath(): string
     {
-        $directory = \getcwd();
+        $directory = getcwd();
 
         return ($directory === false ? '.' : $directory) . '/var/test-time.log';
     }
@@ -167,7 +167,7 @@ final readonly class Settings
      */
     private static function defaultCsvPath(): string
     {
-        $directory = \getcwd();
+        $directory = getcwd();
 
         return ($directory === false ? '.' : $directory) . '/var/test-time.csv';
     }

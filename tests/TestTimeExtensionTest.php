@@ -40,13 +40,13 @@ final class TestTimeExtensionTest extends AbstractTestCase
      */
     public function testBuildsSubscribersByDefault(): void
     {
-        $subscribers = new TestTimeExtension()->subscribers(
+        $subscribers = (new TestTimeExtension())->subscribers(
             $this->configuration(),
             ParameterCollection::fromArray([]),
         );
 
         // PreparationErrored was introduced in PHPUnit 12.
-        $expected = \interface_exists(PreparationErroredSubscriber::class) ? 6 : 5;
+        $expected = interface_exists(PreparationErroredSubscriber::class) ? 6 : 5;
 
         $this->assertCount($expected, $subscribers);
     }
@@ -56,7 +56,7 @@ final class TestTimeExtensionTest extends AbstractTestCase
      */
     public function testBuildsNoSubscribersWhenBothOutputsAreDisabled(): void
     {
-        $subscribers = new TestTimeExtension()->subscribers(
+        $subscribers = (new TestTimeExtension())->subscribers(
             $this->configuration(),
             ParameterCollection::fromArray([
                 'console' => 'false',
@@ -73,10 +73,10 @@ final class TestTimeExtensionTest extends AbstractTestCase
     public function testRemovesStaleReportFromConfiguredLogFile(): void
     {
         $path = $this->directory . '/custom-test-time.log';
-        \file_put_contents($path, 'stale');
-        \touch($path, \time() - 3600);
+        file_put_contents($path, 'stale');
+        touch($path, time() - 3600);
 
-        new TestTimeExtension()->subscribers(
+        (new TestTimeExtension())->subscribers(
             $this->configuration(),
             ParameterCollection::fromArray([
                 'log' => 'true',
@@ -93,10 +93,10 @@ final class TestTimeExtensionTest extends AbstractTestCase
     public function testDoesNotRemoveStaleReportWhenLoggingIsDisabled(): void
     {
         $path = $this->directory . '/test-time.log';
-        \file_put_contents($path, 'stale');
-        \touch($path, \time() - 3600);
+        file_put_contents($path, 'stale');
+        touch($path, time() - 3600);
 
-        new TestTimeExtension()->subscribers(
+        (new TestTimeExtension())->subscribers(
             $this->configuration(),
             ParameterCollection::fromArray([
                 'console' => 'false',
@@ -112,7 +112,7 @@ final class TestTimeExtensionTest extends AbstractTestCase
      */
     private function configuration(): Configuration
     {
-        return new ReflectionClass(Configuration::class)->newInstanceWithoutConstructor();
+        return (new ReflectionClass(Configuration::class))->newInstanceWithoutConstructor();
     }
 
     /**

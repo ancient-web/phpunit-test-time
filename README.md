@@ -11,11 +11,12 @@ skipped, because every worker is a separate process.
 
 ## Compatibility
 
-- PHP `^8.4`
+- PHP `^8.1`
 - `phpunit/phpunit` `^10.0 || ^11.0 || ^12.0 || ^13.0`
 
-On PHPUnit 10 and 11 the `PreparationErrored` subscriber is not registered, because that event was
-introduced in PHPUnit 12.
+The PHPUnit version is chosen by the PHP version you run: 8.1 installs PHPUnit 10, 8.2 → 11,
+8.3 → 12, and 8.4+ → 13. On PHPUnit 10 and 11 the `PreparationErrored` subscriber is not
+registered, because that event was introduced in PHPUnit 12.
 
 ## Installation
 
@@ -178,7 +179,7 @@ October 2026, based on each project's documentation).
 | Paratest: merged report | yes | no² | no² |
 | Configuration | `phpunit.xml` parameters | `phpunit.xml` parameters | `<arguments>` |
 | Supported PHPUnit | 10–13 | 6.5–13 | legacy (≤ 9) |
-| Supported PHP | `^8.4` | 7.4–8.5 | not stated |
+| Supported PHP | `^8.1` | 7.4–8.5 | not stated |
 | GitHub Actions annotations | no | yes | no |
 
 ¹ On PHPUnit 10 and later, where the `MaximumDuration` attribute exists; older versions use the

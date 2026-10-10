@@ -21,9 +21,9 @@ abstract class AbstractTestCase extends TestCase
      */
     protected function setUp(): void
     {
-        $this->directory = \sys_get_temp_dir() . '/phpunit-test-time-' . \bin2hex(\random_bytes(6));
+        $this->directory = sys_get_temp_dir() . '/phpunit-test-time-' . bin2hex(random_bytes(6));
 
-        \mkdir($this->directory, 0o777, true);
+        mkdir($this->directory, 0o777, true);
     }
 
     /**
@@ -41,11 +41,11 @@ abstract class AbstractTestCase extends TestCase
      */
     private function removeDirectory(string $directory): void
     {
-        if (! \is_dir($directory)) {
+        if (! is_dir($directory)) {
             return;
         }
 
-        $entries = \scandir($directory);
+        $entries = scandir($directory);
 
         foreach ($entries === false ? [] : $entries as $entry) {
             if ($entry === '.' || $entry === '..') {
@@ -54,15 +54,15 @@ abstract class AbstractTestCase extends TestCase
 
             $path = $directory . '/' . $entry;
 
-            if (\is_dir($path)) {
+            if (is_dir($path)) {
                 $this->removeDirectory($path);
 
                 continue;
             }
 
-            @\unlink($path);
+            @unlink($path);
         }
 
-        @\rmdir($directory);
+        @rmdir($directory);
     }
 }

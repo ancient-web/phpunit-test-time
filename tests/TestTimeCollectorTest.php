@@ -26,7 +26,7 @@ final class TestTimeCollectorTest extends AbstractTestCase
         $collector->finish($testId, HRTime::fromSecondsAndNanoseconds(3, 500000000));
         $collector->writeReport();
 
-        $contents = (string) \file_get_contents($path);
+        $contents = (string) file_get_contents($path);
 
         $this->assertStringContainsString('2.5000 s', $contents);
         $this->assertStringContainsString($testId, $contents);
@@ -43,7 +43,7 @@ final class TestTimeCollectorTest extends AbstractTestCase
         $collector->finish('orphan-test', HRTime::fromSecondsAndNanoseconds(5, 0));
         $collector->writeReport();
 
-        $this->assertStringNotContainsString('orphan-test', (string) \file_get_contents($path));
+        $this->assertStringNotContainsString('orphan-test', (string) file_get_contents($path));
     }
 
     /**
@@ -62,7 +62,7 @@ final class TestTimeCollectorTest extends AbstractTestCase
         $collector->finish('second-test', HRTime::fromSecondsAndNanoseconds(2, 0));
         $collector->writeReport();
 
-        $contents = (string) \file_get_contents($path);
+        $contents = (string) file_get_contents($path);
 
         $this->assertStringContainsString('first-test', $contents);
         $this->assertStringNotContainsString('second-test', $contents);

@@ -121,7 +121,7 @@ final class TestTimeExtension implements Extension
         ];
 
         // PreparationErrored was introduced in PHPUnit 12.
-        if (\interface_exists(PreparationErroredSubscriber::class)) {
+        if (interface_exists(PreparationErroredSubscriber::class)) {
             $subscribers[] = new TestTimePreparationErroredSubscriber($collector);
         }
 
@@ -133,20 +133,20 @@ final class TestTimeExtension implements Extension
      */
     private function resolveToken(): ?string
     {
-        $token = \getenv('TEST_TOKEN');
+        $token = getenv('TEST_TOKEN');
 
         if ($token !== false && $token !== '') {
             return $token;
         }
 
-        $token = \getenv('UNIQUE_TEST_TOKEN');
+        $token = getenv('UNIQUE_TEST_TOKEN');
 
         if ($token !== false && $token !== '') {
             return $token;
         }
 
-        if (\getenv('PARATEST') !== false) {
-            return (string) \getmypid();
+        if (getenv('PARATEST') !== false) {
+            return (string) getmypid();
         }
 
         return null;

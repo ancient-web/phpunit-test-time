@@ -15,7 +15,7 @@ use AncientWeb\PhpUnitTestTime\TestTime;
  * worker logs are merged into a JSON accumulator under an exclusive lock, from
  * which the human-readable report is rendered; the worker logs are then removed
  */
-abstract readonly class AbstractFileReporter implements Reporter
+abstract class AbstractFileReporter implements Reporter
 {
     /**
      * Flags used to encode the machine-readable logs.
@@ -27,8 +27,8 @@ abstract readonly class AbstractFileReporter implements Reporter
      * @param null|string $token Worker token, or null when not running in paratest
      */
     public function __construct(
-        protected string $reportPath,
-        protected ?string $token = null,
+        protected readonly string $reportPath,
+        protected readonly ?string $token = null,
     ) {
     }
 
@@ -39,15 +39,15 @@ abstract readonly class AbstractFileReporter implements Reporter
      */
     public function reset(): void
     {
-        $threshold = isset($_SERVER['REQUEST_TIME_FLOAT']) && \is_numeric($_SERVER['REQUEST_TIME_FLOAT'])
+        $threshold = isset($_SERVER['REQUEST_TIME_FLOAT']) && is_numeric($_SERVER['REQUEST_TIME_FLOAT'])
             ? (float) $_SERVER['REQUEST_TIME_FLOAT']
-            : \microtime(true);
+            : microtime(true);
 
         foreach ($this->existingFiles() as $file) {
-            $modifiedAt = @\filemtime($file);
+            $modifiedAt = @filemtime($file);
 
             if ($modifiedAt !== false && $modifiedAt < $threshold) {
-                @\unlink($file);
+                @unlink($file);
             }
         }
     }
@@ -77,11 +77,11 @@ abstract readonly class AbstractFileReporter implements Reporter
      */
     protected function ensureDirectory(string $directory): void
     {
-        if (\is_dir($directory)) {
+        if (is_dir($directory)) {
             return;
         }
 
-        if (! \mkdir($directory, 0o777, true) && ! \is_dir($directory)) {
+        if (! mkdir($directory, 0o777, true) && ! is_dir($directory)) {
             throw ReportWriteFailed::directory($directory);
         }
     }
@@ -94,7 +94,7 @@ abstract readonly class AbstractFileReporter implements Reporter
      */
     protected function writeJson(string $path, array $testTimes): void
     {
-        $this->ensureDirectory(\dirname($path));
+        $this->ensureDirectory(dirname($path));
 
         $data = [];
 
@@ -105,13 +105,13 @@ abstract readonly class AbstractFileReporter implements Reporter
             ];
         }
 
-        $json = \json_encode($data, self::JSON_FLAGS);
+        $json = json_encode($data, self::JSON_FLAGS);
 
         if ($json === false) {
             throw ReportWriteFailed::write($path);
         }
 
-        if (\file_put_contents($path, $json) === false) {
+        if (file_put_contents($path, $json) === false) {
             throw ReportWriteFailed::write($path);
         }
     }
@@ -125,28 +125,28 @@ abstract readonly class AbstractFileReporter implements Reporter
      */
     protected function readJson(string $path): array
     {
-        $contents = @\file_get_contents($path);
+        $contents = @file_get_contents($path);
 
         if ($contents === false || $contents === '') {
             return [];
         }
 
-        $decoded = \json_decode($contents, true);
+        $decoded = json_decode($contents, true);
 
-        if (! \is_array($decoded)) {
+        if (! is_array($decoded)) {
             return [];
         }
 
         $testTimes = [];
 
         foreach ($decoded as $id => $entry) {
-            if (! is_string($id) || ! \is_array($entry)) {
+            if (! is_string($id) || ! is_array($entry)) {
                 continue;
             }
 
             $duration = $entry['duration'] ?? null;
 
-            if (! \is_numeric($duration)) {
+            if (! is_numeric($duration)) {
                 continue;
             }
 
@@ -154,7 +154,7 @@ abstract readonly class AbstractFileReporter implements Reporter
 
             $testTimes[$id] = new TestTime(
                 (float) $duration,
-                \is_numeric($minimum) ? (int) $minimum : null,
+                is_numeric($minimum) ? (int) $minimum : null,
             );
         }
 
@@ -185,8 +185,8 @@ abstract readonly class AbstractFileReporter implements Reporter
     {
         $extension = $this->reportExtension();
 
-        if ($extension !== '' && \str_ends_with($this->reportPath, $extension)) {
-            return \substr($this->reportPath, 0, -\strlen($extension));
+        if ($extension !== '' && str_ends_with($this->reportPath, $extension)) {
+            return substr($this->reportPath, 0, -strlen($extension));
         }
 
         return $this->reportPath;
@@ -197,17 +197,17 @@ abstract readonly class AbstractFileReporter implements Reporter
      */
     private function merge(): void
     {
-        $this->ensureDirectory(\dirname($this->reportPath));
+        $this->ensureDirectory(dirname($this->reportPath));
 
         $accumulatorPath = $this->accumulatorPath();
-        $handle = @\fopen($accumulatorPath, 'c');
+        $handle = @fopen($accumulatorPath, 'c');
 
         if ($handle === false) {
             throw ReportWriteFailed::open($accumulatorPath);
         }
 
         try {
-            if (! \flock($handle, LOCK_EX)) {
+            if (! flock($handle, LOCK_EX)) {
                 throw ReportWriteFailed::lock($accumulatorPath);
             }
 
@@ -225,10 +225,10 @@ abstract readonly class AbstractFileReporter implements Reporter
 
                 $this->removeWorkerLogs();
             } finally {
-                \flock($handle, LOCK_UN);
+                flock($handle, LOCK_UN);
             }
         } finally {
-            \fclose($handle);
+            fclose($handle);
         }
     }
 
@@ -249,7 +249,7 @@ abstract readonly class AbstractFileReporter implements Reporter
         $current = $merged[$id];
 
         $merged[$id] = new TestTime(
-            \max($current->seconds, $testTime->seconds),
+            max($current->seconds, $testTime->seconds),
             $current->minimumMilliseconds ?? $testTime->minimumMilliseconds,
         );
     }
@@ -260,7 +260,7 @@ abstract readonly class AbstractFileReporter implements Reporter
     private function removeWorkerLogs(): void
     {
         foreach ($this->workerPaths() as $file) {
-            @\unlink($file);
+            @unlink($file);
         }
     }
 
@@ -271,7 +271,7 @@ abstract readonly class AbstractFileReporter implements Reporter
      */
     private function existingFiles(): array
     {
-        return \array_merge(
+        return array_merge(
             [$this->reportPath, $this->accumulatorPath()],
             $this->workerPaths(),
         );
@@ -287,10 +287,10 @@ abstract readonly class AbstractFileReporter implements Reporter
      */
     private function workerPaths(): array
     {
-        $directory = \dirname($this->basePath());
-        $name = \basename($this->basePath());
+        $directory = dirname($this->basePath());
+        $name = basename($this->basePath());
 
-        $entries = @\scandir($directory);
+        $entries = @scandir($directory);
 
         if ($entries === false) {
             return [];
@@ -301,7 +301,7 @@ abstract readonly class AbstractFileReporter implements Reporter
         $files = [];
 
         foreach ($entries as $entry) {
-            if ($entry === $accumulator || ! \str_starts_with($entry, $prefix) || ! \str_ends_with($entry, '.json')) {
+            if ($entry === $accumulator || ! str_starts_with($entry, $prefix) || ! str_ends_with($entry, '.json')) {
                 continue;
             }
 
@@ -318,7 +318,7 @@ abstract readonly class AbstractFileReporter implements Reporter
      */
     private function workerPath(string $token): string
     {
-        $safeToken = \preg_replace('/[^A-Za-z0-9_.-]/', '_', $token) ?? 'worker';
+        $safeToken = preg_replace('/[^A-Za-z0-9_.-]/', '_', $token) ?? 'worker';
 
         return $this->basePath() . '.' . $safeToken . '.json';
     }

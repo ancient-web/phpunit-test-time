@@ -12,13 +12,13 @@ use PHPUnit\Event\Test\PreparationFailedSubscriber;
 /**
  * Records the time of a test that failed preparation.
  */
-final readonly class TestTimePreparationFailedSubscriber implements PreparationFailedSubscriber
+final class TestTimePreparationFailedSubscriber implements PreparationFailedSubscriber
 {
     /**
      * @param TestTimeCollector $collector Test execution time collector
      */
     public function __construct(
-        private TestTimeCollector $collector
+        private readonly TestTimeCollector $collector
     ) {
     }
 

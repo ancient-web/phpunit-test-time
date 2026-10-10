@@ -11,7 +11,7 @@ use Attribute;
  * Sets the maximum duration, in milliseconds, for a single test method.
  */
 #[Attribute(Attribute::TARGET_METHOD)]
-final readonly class MaximumDuration
+final class MaximumDuration
 {
     /**
      * @param int $milliseconds Maximum duration in milliseconds
@@ -19,7 +19,7 @@ final readonly class MaximumDuration
      * @throws InvalidMaximumDuration
      */
     public function __construct(
-        public int $milliseconds
+        public readonly int $milliseconds
     ) {
         if ($milliseconds <= 0) {
             throw InvalidMaximumDuration::notGreaterThanZero($milliseconds);

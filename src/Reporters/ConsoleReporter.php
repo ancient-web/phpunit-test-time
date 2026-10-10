@@ -13,7 +13,7 @@ use PHPUnit\TextUI\Configuration\Configuration;
 /**
  * Prints the test execution time report to the console.
  */
-final readonly class ConsoleReporter implements Reporter
+final class ConsoleReporter implements Reporter
 {
     /**
      * @param Configuration $configuration PHPUnit configuration
@@ -22,10 +22,10 @@ final readonly class ConsoleReporter implements Reporter
      * @param int $maximumWidth Maximum width in columns (0 = no truncation)
      */
     public function __construct(
-        private Configuration $configuration,
-        private int $minimumDuration,
-        private int $maximumCount,
-        private int $maximumWidth,
+        private readonly Configuration $configuration,
+        private readonly int $minimumDuration,
+        private readonly int $maximumCount,
+        private readonly int $maximumWidth,
     ) {
     }
 
@@ -51,6 +51,6 @@ final readonly class ConsoleReporter implements Reporter
 
         $stream = $this->configuration->outputToStandardErrorStream() ? STDERR : STDOUT;
 
-        \fwrite($stream, PHP_EOL . $report->toText('Test execution time report', new DateTimeImmutable(), $this->maximumWidth));
+        fwrite($stream, PHP_EOL . $report->toText('Test execution time report', new DateTimeImmutable(), $this->maximumWidth));
     }
 }

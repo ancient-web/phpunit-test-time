@@ -36,7 +36,7 @@ final class TestTimeCollector
      */
     public function __construct(Reporter ...$reporters)
     {
-        $this->reporters = \array_values($reporters);
+        $this->reporters = array_values($reporters);
     }
 
     /**

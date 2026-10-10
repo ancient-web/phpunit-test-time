@@ -20,16 +20,16 @@ final class CsvReporterTest extends AbstractTestCase
     {
         $path = $this->directory . '/test-time.csv';
 
-        new CsvReporter($path, null, 0, 0, '|')->report([
+        (new CsvReporter($path, null, 0, 0, '|'))->report([
             'fast-test' => new TestTime(0.5),
             'slow-test' => new TestTime(2.5),
         ]);
 
-        $contents = (string) \file_get_contents($path);
+        $contents = (string) file_get_contents($path);
 
         $this->assertSame(
             ['Test case', 'Execution time (s)'],
-            \str_getcsv(\explode(PHP_EOL, $contents)[0], '|', '"', '\\'),
+            str_getcsv(explode(PHP_EOL, $contents)[0], '|', '"', '\\'),
         );
         $this->assertStringContainsString('slow-test|2.5000', $contents);
         $this->assertStringContainsString('fast-test|0.5000', $contents);
@@ -42,17 +42,17 @@ final class CsvReporterTest extends AbstractTestCase
     {
         $path = $this->directory . '/test-time.csv';
 
-        new CsvReporter($path)->report([
+        (new CsvReporter($path))->report([
             'fast-test' => new TestTime(0.5),
             'slow-test' => new TestTime(2.5),
             'medium-test' => new TestTime(1.5),
         ]);
 
-        $contents = (string) \file_get_contents($path);
+        $contents = (string) file_get_contents($path);
 
-        $slow = \strpos($contents, 'slow-test');
-        $medium = \strpos($contents, 'medium-test');
-        $fast = \strpos($contents, 'fast-test');
+        $slow = strpos($contents, 'slow-test');
+        $medium = strpos($contents, 'medium-test');
+        $fast = strpos($contents, 'fast-test');
 
         $this->assertNotFalse($slow);
         $this->assertNotFalse($medium);
@@ -69,13 +69,13 @@ final class CsvReporterTest extends AbstractTestCase
     {
         $path = $this->directory . '/test-time.csv';
 
-        new CsvReporter($path)->report([
+        (new CsvReporter($path))->report([
             'some-test' => new TestTime(1.0),
         ]);
 
         $this->assertStringContainsString(
             'some-test;1.0000',
-            (string) \file_get_contents($path),
+            (string) file_get_contents($path),
         );
     }
 
@@ -86,13 +86,13 @@ final class CsvReporterTest extends AbstractTestCase
     {
         $path = $this->directory . '/test-time.csv';
 
-        new CsvReporter($path, null, 0, 0, "\t")->report([
+        (new CsvReporter($path, null, 0, 0, "\t"))->report([
             'some-test' => new TestTime(1.0),
         ]);
 
         $this->assertStringContainsString(
             "some-test\t1.0000",
-            (string) \file_get_contents($path),
+            (string) file_get_contents($path),
         );
     }
 
@@ -113,12 +113,12 @@ final class CsvReporterTest extends AbstractTestCase
     {
         $path = $this->directory . '/test-time.csv';
 
-        new CsvReporter($path, null, 500)->report([
+        (new CsvReporter($path, null, 500))->report([
             'fast-test' => new TestTime(0.1),
             'slow-test' => new TestTime(1.0),
         ]);
 
-        $contents = (string) \file_get_contents($path);
+        $contents = (string) file_get_contents($path);
 
         $this->assertStringNotContainsString('fast-test', $contents);
         $this->assertStringContainsString('slow-test', $contents);
@@ -131,12 +131,12 @@ final class CsvReporterTest extends AbstractTestCase
     {
         $path = $this->directory . '/test-time.csv';
 
-        new CsvReporter($path, null, 0, 1)->report([
+        (new CsvReporter($path, null, 0, 1))->report([
             'fast-test' => new TestTime(0.1),
             'slow-test' => new TestTime(1.0),
         ]);
 
-        $contents = (string) \file_get_contents($path);
+        $contents = (string) file_get_contents($path);
 
         $this->assertStringNotContainsString('fast-test', $contents);
         $this->assertStringContainsString('slow-test', $contents);
@@ -149,14 +149,14 @@ final class CsvReporterTest extends AbstractTestCase
     {
         $path = $this->directory . '/test-time.csv';
 
-        new CsvReporter($path, 'worker-1')->report([
+        (new CsvReporter($path, 'worker-1'))->report([
             'shared-test' => new TestTime(1.0),
         ]);
-        new CsvReporter($path, 'worker-2')->report([
+        (new CsvReporter($path, 'worker-2'))->report([
             'shared-test' => new TestTime(3.0),
         ]);
 
-        $contents = (string) \file_get_contents($path);
+        $contents = (string) file_get_contents($path);
 
         $this->assertStringContainsString('3.0000', $contents);
         $this->assertStringNotContainsString('1.0000', $contents);
@@ -172,7 +172,7 @@ final class CsvReporterTest extends AbstractTestCase
     {
         $path = $this->directory . '/test-time.csv';
 
-        new CsvReporter($path, 'worker-1')->report([
+        (new CsvReporter($path, 'worker-1'))->report([
             'shared-test' => new TestTime(1.0),
         ]);
 
@@ -187,7 +187,7 @@ final class CsvReporterTest extends AbstractTestCase
     {
         $path = $this->directory . '/nested/deeper/test-time.csv';
 
-        new CsvReporter($path)->report([
+        (new CsvReporter($path))->report([
             'some-test' => new TestTime(1.0),
         ]);
 
