@@ -130,3 +130,5 @@ only.
 - PSR-4: `AncientWeb\PhpUnitTestTime\` → `src/`, `AncientWeb\PhpUnitTestTime\Tests\` → `tests/`.
 - `composer.lock` is gitignored (library convention); the Docker entrypoint installs dependencies
   from it into the live-mounted `vendor/` on each run.
+- English only: no Cyrillic anywhere in the repository (code, comments, documentation, commit
+  messages, CI).
