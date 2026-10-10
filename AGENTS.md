@@ -101,7 +101,10 @@ docker compose run --rm tests composer phar        # build the distributable PHA
 ## Conventions
 
 - Every file starts with `declare(strict_types=1);`.
-- Classes are `final`; DTO-like/value classes are `readonly`.
+- Classes are `final`; DTO-like/value classes use `readonly` properties (not `readonly` classes,
+  which require PHP 8.2).
+- The code must stay PHP 8.1-compatible (the PHPUnit 10 floor): no typed class constants, and
+  parenthesise `new` before a method call (`(new Foo())->bar()`; PHP 8.4 allows dropping them).
 - Every method and parameter has a docblock (the codebase style).
 - Global classes are imported explicitly (`use DateTimeImmutable;`); global functions are not
   imported (`import_functions` is disabled in `ecs.php`).
