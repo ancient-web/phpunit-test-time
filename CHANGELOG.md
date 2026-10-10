@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Coding standards are now enforced with Easy Coding Standard (ECS) instead of PHP-CS-Fixer; the
+  `composer cs` and `composer cs:check` scripts are unchanged.
+
 ## [2.1.0] - 2026-10-09
 
 ### Changed

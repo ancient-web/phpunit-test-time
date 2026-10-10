@@ -17,7 +17,10 @@ final readonly class TestTimeFinishedSubscriber implements FinishedSubscriber
     /**
      * @param TestTimeCollector $collector Test execution time collector
      */
-    public function __construct(private TestTimeCollector $collector) {}
+    public function __construct(
+        private TestTimeCollector $collector
+    ) {
+    }
 
     /**
      * Handle the test finished event.

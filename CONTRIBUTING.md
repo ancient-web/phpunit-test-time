@@ -28,7 +28,7 @@ docker compose run --rm tests composer it
 
 This runs, in order:
 
-- `composer cs:check` — coding standards (PHP-CS-Fixer),
+- `composer cs:check` — coding standards (ECS),
 - `composer stan` — static analysis (PHPStan, level max),
 - `composer rector:check` — automated refactoring check (Rector),
 - `composer test` — the test suite.

@@ -7,11 +7,6 @@ namespace AncientWeb\PhpUnitTestTime;
 use AncientWeb\PhpUnitTestTime\Exception\InvalidParameter;
 use PHPUnit\Runner\Extension\ParameterCollection;
 
-use function getcwd;
-use function in_array;
-use function preg_match;
-use function strtolower;
-
 /**
  * Extension configuration parsed from the phpunit.xml parameters.
  */
@@ -41,7 +36,8 @@ final readonly class Settings
         public int $csvMinimumDuration = 0,
         public int $csvCount = 0,
         public string $csvSeparator = ';',
-    ) {}
+    ) {
+    }
 
     /**
      * Build settings from the extension parameters.
@@ -76,17 +72,17 @@ final readonly class Settings
      */
     private static function boolean(ParameterCollection $parameters, string $name, bool $default): bool
     {
-        if (!$parameters->has($name)) {
+        if (! $parameters->has($name)) {
             return $default;
         }
 
         $value = $parameters->get($name);
 
-        if (in_array(strtolower($value), ['1', 'true', 'yes', 'on'], true)) {
+        if (\in_array(\strtolower($value), ['1', 'true', 'yes', 'on'], true)) {
             return true;
         }
 
-        if (in_array(strtolower($value), ['0', 'false', 'no', 'off'], true)) {
+        if (\in_array(\strtolower($value), ['0', 'false', 'no', 'off'], true)) {
             return false;
         }
 
@@ -102,13 +98,13 @@ final readonly class Settings
      */
     private static function integer(ParameterCollection $parameters, string $name, int $default): int
     {
-        if (!$parameters->has($name)) {
+        if (! $parameters->has($name)) {
             return $default;
         }
 
         $value = $parameters->get($name);
 
-        if (1 !== preg_match('/^\d+$/', $value)) {
+        if (\preg_match('/^\d+$/', $value) !== 1) {
             throw InvalidParameter::notANonNegativeInteger($name, $value);
         }
 
@@ -123,17 +119,17 @@ final readonly class Settings
      */
     private static function width(ParameterCollection $parameters, string $name): int
     {
-        if (!$parameters->has($name)) {
+        if (! $parameters->has($name)) {
             return 0;
         }
 
         $value = $parameters->get($name);
 
-        if ('max' === $value) {
+        if ($value === 'max') {
             return Terminal::width();
         }
 
-        if (1 !== preg_match('/^\d+$/', $value)) {
+        if (\preg_match('/^\d+$/', $value) !== 1) {
             throw InvalidParameter::notANonNegativeInteger($name, $value);
         }
 
@@ -149,7 +145,7 @@ final readonly class Settings
      */
     private static function string(ParameterCollection $parameters, string $name, string $default): string
     {
-        if (!$parameters->has($name)) {
+        if (! $parameters->has($name)) {
             return $default;
         }
 
@@ -161,9 +157,9 @@ final readonly class Settings
      */
     private static function defaultLogPath(): string
     {
-        $directory = getcwd();
+        $directory = \getcwd();
 
-        return (false === $directory ? '.' : $directory).'/var/test-time.log';
+        return ($directory === false ? '.' : $directory) . '/var/test-time.log';
     }
 
     /**
@@ -171,8 +167,8 @@ final readonly class Settings
      */
     private static function defaultCsvPath(): string
     {
-        $directory = getcwd();
+        $directory = \getcwd();
 
-        return (false === $directory ? '.' : $directory).'/var/test-time.csv';
+        return ($directory === false ? '.' : $directory) . '/var/test-time.csv';
     }
 }

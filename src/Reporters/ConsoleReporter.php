@@ -10,8 +10,6 @@ use AncientWeb\PhpUnitTestTime\TestTime;
 use DateTimeImmutable;
 use PHPUnit\TextUI\Configuration\Configuration;
 
-use function fwrite;
-
 /**
  * Prints the test execution time report to the console.
  */
@@ -28,7 +26,8 @@ final readonly class ConsoleReporter implements Reporter
         private int $minimumDuration,
         private int $maximumCount,
         private int $maximumWidth,
-    ) {}
+    ) {
+    }
 
     /**
      * Print the report unless output is suppressed or nothing matches.
@@ -46,12 +45,12 @@ final readonly class ConsoleReporter implements Reporter
             ->withMaximumCount($this->maximumCount)
         ;
 
-        if (0 === $report->count()) {
+        if ($report->count() === 0) {
             return;
         }
 
         $stream = $this->configuration->outputToStandardErrorStream() ? STDERR : STDOUT;
 
-        fwrite($stream, PHP_EOL.$report->toText('Test execution time report', new DateTimeImmutable(), $this->maximumWidth));
+        \fwrite($stream, PHP_EOL . $report->toText('Test execution time report', new DateTimeImmutable(), $this->maximumWidth));
     }
 }

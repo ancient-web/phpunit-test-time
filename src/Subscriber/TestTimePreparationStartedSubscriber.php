@@ -17,7 +17,10 @@ final readonly class TestTimePreparationStartedSubscriber implements Preparation
     /**
      * @param TestTimeCollector $collector Test execution time collector
      */
-    public function __construct(private TestTimeCollector $collector) {}
+    public function __construct(
+        private TestTimeCollector $collector
+    ) {
+    }
 
     /**
      * Handle the test preparation started event.

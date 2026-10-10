@@ -4,13 +4,6 @@ declare(strict_types=1);
 
 namespace AncientWeb\PhpUnitTestTime\Tests\E2E;
 
-use function array_merge;
-use function explode;
-use function file_get_contents;
-use function mb_strlen;
-use function str_contains;
-use function str_getcsv;
-
 /**
  * End-to-end tests that run the real extension in a separate PHPUnit process.
  */
@@ -22,8 +15,12 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
     public function testPrintsOnlyTestsAboveTheConsoleMinimumDuration(): void
     {
         $result = $this->runExtension(
-            $this->consoleOnly(['console-minimum-duration' => '500']),
-            ['SlowAndFastTest.php' => $this->slowAndFastTest()],
+            $this->consoleOnly([
+                'console-minimum-duration' => '500',
+            ]),
+            [
+                'SlowAndFastTest.php' => $this->slowAndFastTest(),
+            ],
         );
 
         $this->assertSame(0, $result['exitCode'], $result['error']);
@@ -38,8 +35,13 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
     public function testConsoleReportLimitsTheNumberOfTests(): void
     {
         $result = $this->runExtension(
-            $this->consoleOnly(['console-minimum-duration' => '0', 'console-count' => '1']),
-            ['OrderingTest.php' => $this->orderingTest()],
+            $this->consoleOnly([
+                'console-minimum-duration' => '0',
+                'console-count' => '1',
+            ]),
+            [
+                'OrderingTest.php' => $this->orderingTest(),
+            ],
         );
 
         $this->assertSame(0, $result['exitCode'], $result['error']);
@@ -54,8 +56,13 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
     public function testConsoleReportTruncatesLongIdentifiers(): void
     {
         $result = $this->runExtension(
-            $this->consoleOnly(['console-minimum-duration' => '0', 'console-maximum-width' => '40']),
-            ['LongIdentifierTest.php' => $this->longIdentifierTest()],
+            $this->consoleOnly([
+                'console-minimum-duration' => '0',
+                'console-maximum-width' => '40',
+            ]),
+            [
+                'LongIdentifierTest.php' => $this->longIdentifierTest(),
+            ],
         );
 
         $this->assertSame(0, $result['exitCode'], $result['error']);
@@ -63,7 +70,7 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
         $line = $this->lineContaining($result['output'], 'Ancient');
 
         $this->assertNotSame('', $line);
-        $this->assertLessThanOrEqual(40, mb_strlen($line));
+        $this->assertLessThanOrEqual(40, \mb_strlen($line));
         $this->assertStringContainsString('...', $line);
         $this->assertStringNotContainsString('testMethodWithAnExtremelyLongName', $line);
     }
@@ -75,7 +82,9 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
     {
         $result = $this->runExtension(
             $this->consoleOnly(),
-            ['SlowAndFastTest.php' => $this->slowAndFastTest()],
+            [
+                'SlowAndFastTest.php' => $this->slowAndFastTest(),
+            ],
             [],
             ['--no-output'],
         );
@@ -91,7 +100,9 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
     {
         $result = $this->runExtension(
             $this->consoleOnly(),
-            ['SlowAndFastTest.php' => $this->slowAndFastTest()],
+            [
+                'SlowAndFastTest.php' => $this->slowAndFastTest(),
+            ],
             [],
             ['--stderr'],
         );
@@ -106,7 +117,7 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
      */
     public function testWritesTheFileReport(): void
     {
-        $path = $this->directory.'/test-time.log';
+        $path = $this->directory . '/test-time.log';
 
         $result = $this->runExtension(
             [
@@ -115,13 +126,15 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
                 'log-file' => $path,
                 'log-minimum-duration' => '500',
             ],
-            ['SlowAndFastTest.php' => $this->slowAndFastTest()],
+            [
+                'SlowAndFastTest.php' => $this->slowAndFastTest(),
+            ],
         );
 
         $this->assertSame(0, $result['exitCode'], $result['error']);
         $this->assertFileExists($path);
 
-        $contents = (string) file_get_contents($path);
+        $contents = (string) \file_get_contents($path);
 
         $this->assertStringContainsString('testSlowTest', $contents);
         $this->assertStringNotContainsString('testFastTest', $contents);
@@ -132,7 +145,7 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
      */
     public function testWritesTheCsvReport(): void
     {
-        $path = $this->directory.'/test-time.csv';
+        $path = $this->directory . '/test-time.csv';
 
         $result = $this->runExtension(
             [
@@ -142,17 +155,19 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
                 'csv-minimum-duration' => '500',
                 'csv-separator' => '|',
             ],
-            ['SlowAndFastTest.php' => $this->slowAndFastTest()],
+            [
+                'SlowAndFastTest.php' => $this->slowAndFastTest(),
+            ],
         );
 
         $this->assertSame(0, $result['exitCode'], $result['error']);
         $this->assertFileExists($path);
 
-        $contents = (string) file_get_contents($path);
+        $contents = (string) \file_get_contents($path);
 
         $this->assertSame(
             ['Test case', 'Execution time (s)'],
-            str_getcsv(explode(PHP_EOL, $contents)[0], '|', '"', '\\'),
+            \str_getcsv(\explode(PHP_EOL, $contents)[0], '|', '"', '\\'),
         );
         $this->assertStringContainsString('testSlowTest', $contents);
         $this->assertStringNotContainsString('testFastTest', $contents);
@@ -164,8 +179,12 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
     public function testPerTestMaximumDurationOverridesTheConsoleMinimum(): void
     {
         $result = $this->runExtension(
-            $this->consoleOnly(['console-minimum-duration' => '100']),
-            ['OverrideTest.php' => $this->overrideTest()],
+            $this->consoleOnly([
+                'console-minimum-duration' => '100',
+            ]),
+            [
+                'OverrideTest.php' => $this->overrideTest(),
+            ],
         );
 
         $this->assertSame(0, $result['exitCode'], $result['error']);
@@ -178,15 +197,25 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
      */
     public function testMergesParatestWorkerReports(): void
     {
-        $path = $this->directory.'/test-time.log';
+        $path = $this->directory . '/test-time.log';
 
         $configPath = $this->prepareConfiguration(
-            ['console' => 'true', 'log' => 'true', 'log-file' => $path],
-            ['TokenTest.php' => $this->tokenTest()],
+            [
+                'console' => 'true',
+                'log' => 'true',
+                'log-file' => $path,
+            ],
+            [
+                'TokenTest.php' => $this->tokenTest(),
+            ],
         );
 
-        $firstProcess = $this->startProcess($configPath, ['TEST_TOKEN' => '1']);
-        $secondProcess = $this->startProcess($configPath, ['TEST_TOKEN' => '2']);
+        $firstProcess = $this->startProcess($configPath, [
+            'TEST_TOKEN' => '1',
+        ]);
+        $secondProcess = $this->startProcess($configPath, [
+            'TEST_TOKEN' => '2',
+        ]);
 
         $first = $this->finish($firstProcess);
         $second = $this->finish($secondProcess);
@@ -196,15 +225,15 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
 
         $this->assertFileExists($path);
 
-        $contents = (string) file_get_contents($path);
+        $contents = (string) \file_get_contents($path);
 
         $this->assertStringContainsString('testShared', $contents);
         $this->assertStringContainsString('0.5', $contents);
         $this->assertStringNotContainsString('0.1', $contents);
 
-        $this->assertFileExists($this->directory.'/test-time.json');
-        $this->assertFileDoesNotExist($this->directory.'/test-time.1.json');
-        $this->assertFileDoesNotExist($this->directory.'/test-time.2.json');
+        $this->assertFileExists($this->directory . '/test-time.json');
+        $this->assertFileDoesNotExist($this->directory . '/test-time.1.json');
+        $this->assertFileDoesNotExist($this->directory . '/test-time.2.json');
 
         // The console report is skipped while running in paratest.
         $this->assertStringNotContainsString('Test execution time report', $first['output']);
@@ -216,30 +245,40 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
      */
     public function testMergesParatestCsvWorkerReports(): void
     {
-        $path = $this->directory.'/test-time.csv';
+        $path = $this->directory . '/test-time.csv';
 
         $configPath = $this->prepareConfiguration(
-            ['console' => 'false', 'csv' => 'true', 'csv-file' => $path],
-            ['TokenTest.php' => $this->tokenTest()],
+            [
+                'console' => 'false',
+                'csv' => 'true',
+                'csv-file' => $path,
+            ],
+            [
+                'TokenTest.php' => $this->tokenTest(),
+            ],
         );
 
-        $first = $this->finish($this->startProcess($configPath, ['TEST_TOKEN' => '1']));
-        $second = $this->finish($this->startProcess($configPath, ['TEST_TOKEN' => '2']));
+        $first = $this->finish($this->startProcess($configPath, [
+            'TEST_TOKEN' => '1',
+        ]));
+        $second = $this->finish($this->startProcess($configPath, [
+            'TEST_TOKEN' => '2',
+        ]));
 
         $this->assertSame(0, $first['exitCode'], $first['error']);
         $this->assertSame(0, $second['exitCode'], $second['error']);
 
-        $contents = (string) file_get_contents($path);
+        $contents = (string) \file_get_contents($path);
 
         $this->assertStringContainsString('testShared', $contents);
         $this->assertStringContainsString('0.5', $contents);
         $this->assertStringNotContainsString('0.1', $contents);
 
         // The CSV reporter shares the machine log base with the log reporter.
-        $this->assertFileExists($this->directory.'/test-time.json');
-        $this->assertFileDoesNotExist($this->directory.'/test-time.csv.json');
-        $this->assertFileDoesNotExist($this->directory.'/test-time.1.json');
-        $this->assertFileDoesNotExist($this->directory.'/test-time.2.json');
+        $this->assertFileExists($this->directory . '/test-time.json');
+        $this->assertFileDoesNotExist($this->directory . '/test-time.csv.json');
+        $this->assertFileDoesNotExist($this->directory . '/test-time.1.json');
+        $this->assertFileDoesNotExist($this->directory . '/test-time.2.json');
     }
 
     /**
@@ -247,8 +286,8 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
      */
     public function testWritesLogAndCsvReportsTogether(): void
     {
-        $logPath = $this->directory.'/test-time.log';
-        $csvPath = $this->directory.'/test-time.csv';
+        $logPath = $this->directory . '/test-time.log';
+        $csvPath = $this->directory . '/test-time.csv';
 
         $configPath = $this->prepareConfiguration(
             [
@@ -258,27 +297,33 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
                 'csv' => 'true',
                 'csv-file' => $csvPath,
             ],
-            ['TokenTest.php' => $this->tokenTest()],
+            [
+                'TokenTest.php' => $this->tokenTest(),
+            ],
         );
 
-        $first = $this->finish($this->startProcess($configPath, ['TEST_TOKEN' => '1']));
-        $second = $this->finish($this->startProcess($configPath, ['TEST_TOKEN' => '2']));
+        $first = $this->finish($this->startProcess($configPath, [
+            'TEST_TOKEN' => '1',
+        ]));
+        $second = $this->finish($this->startProcess($configPath, [
+            'TEST_TOKEN' => '2',
+        ]));
 
         $this->assertSame(0, $first['exitCode'], $first['error']);
         $this->assertSame(0, $second['exitCode'], $second['error']);
 
-        $log = (string) file_get_contents($logPath);
-        $csv = (string) file_get_contents($csvPath);
+        $log = (string) \file_get_contents($logPath);
+        $csv = (string) \file_get_contents($csvPath);
 
         $this->assertStringContainsString('testShared', $log);
         $this->assertStringContainsString('0.5', $log);
         $this->assertStringContainsString('testShared', $csv);
         $this->assertStringContainsString('0.5', $csv);
 
-        $this->assertFileExists($this->directory.'/test-time.json');
-        $this->assertFileDoesNotExist($this->directory.'/test-time.csv.json');
-        $this->assertFileDoesNotExist($this->directory.'/test-time.1.json');
-        $this->assertFileDoesNotExist($this->directory.'/test-time.2.json');
+        $this->assertFileExists($this->directory . '/test-time.json');
+        $this->assertFileDoesNotExist($this->directory . '/test-time.csv.json');
+        $this->assertFileDoesNotExist($this->directory . '/test-time.1.json');
+        $this->assertFileDoesNotExist($this->directory . '/test-time.2.json');
     }
 
     /**
@@ -290,7 +335,10 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
      */
     private function consoleOnly(array $parameters = []): array
     {
-        return array_merge(['console' => 'true', 'log' => 'false'], $parameters);
+        return \array_merge([
+            'console' => 'true',
+            'log' => 'false',
+        ], $parameters);
     }
 
     /**
@@ -301,8 +349,8 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
      */
     private function lineContaining(string $text, string $needle): string
     {
-        foreach (explode(PHP_EOL, $text) as $line) {
-            if (str_contains($line, $needle)) {
+        foreach (\explode(PHP_EOL, $text) as $line) {
+            if (\str_contains($line, $needle)) {
                 return $line;
             }
         }

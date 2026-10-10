@@ -10,11 +10,6 @@ use PHPUnit\Runner\Extension\ParameterCollection;
 use PHPUnit\TextUI\Configuration\Configuration;
 use ReflectionClass;
 
-use function file_put_contents;
-use function interface_exists;
-use function time;
-use function touch;
-
 /**
  * Tests for extension registration and report path resolution.
  */
@@ -51,7 +46,7 @@ final class TestTimeExtensionTest extends AbstractTestCase
         );
 
         // PreparationErrored was introduced in PHPUnit 12.
-        $expected = interface_exists(PreparationErroredSubscriber::class) ? 6 : 5;
+        $expected = \interface_exists(PreparationErroredSubscriber::class) ? 6 : 5;
 
         $this->assertCount($expected, $subscribers);
     }
@@ -63,7 +58,10 @@ final class TestTimeExtensionTest extends AbstractTestCase
     {
         $subscribers = new TestTimeExtension()->subscribers(
             $this->configuration(),
-            ParameterCollection::fromArray(['console' => 'false', 'log' => 'false']),
+            ParameterCollection::fromArray([
+                'console' => 'false',
+                'log' => 'false',
+            ]),
         );
 
         $this->assertSame([], $subscribers);
@@ -74,13 +72,16 @@ final class TestTimeExtensionTest extends AbstractTestCase
      */
     public function testRemovesStaleReportFromConfiguredLogFile(): void
     {
-        $path = $this->directory.'/custom-test-time.log';
-        file_put_contents($path, 'stale');
-        touch($path, time() - 3600);
+        $path = $this->directory . '/custom-test-time.log';
+        \file_put_contents($path, 'stale');
+        \touch($path, \time() - 3600);
 
         new TestTimeExtension()->subscribers(
             $this->configuration(),
-            ParameterCollection::fromArray(['log' => 'true', 'log-file' => $path]),
+            ParameterCollection::fromArray([
+                'log' => 'true',
+                'log-file' => $path,
+            ]),
         );
 
         $this->assertFileDoesNotExist($path);
@@ -91,13 +92,16 @@ final class TestTimeExtensionTest extends AbstractTestCase
      */
     public function testDoesNotRemoveStaleReportWhenLoggingIsDisabled(): void
     {
-        $path = $this->directory.'/test-time.log';
-        file_put_contents($path, 'stale');
-        touch($path, time() - 3600);
+        $path = $this->directory . '/test-time.log';
+        \file_put_contents($path, 'stale');
+        \touch($path, \time() - 3600);
 
         new TestTimeExtension()->subscribers(
             $this->configuration(),
-            ParameterCollection::fromArray(['console' => 'false', 'log' => 'false']),
+            ParameterCollection::fromArray([
+                'console' => 'false',
+                'log' => 'false',
+            ]),
         );
 
         $this->assertFileExists($path);

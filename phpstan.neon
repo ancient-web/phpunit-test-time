@@ -9,8 +9,12 @@ parameters:
     paths:
         - src
         - tests
-        - .php-cs-fixer.php
+        - ecs.php
         - rector.php
+    # ECS bundles PHP-CS-Fixer (and its `PhpCsFixer\` namespace) instead of
+    # installing it as a direct dependency, so teach PHPStan where to find it.
+    scanDirectories:
+        - vendor/symplify/easy-coding-standard/vendor/friendsofphp/php-cs-fixer/src
     tmpDir: .build/phpstan
     treatPhpDocTypesAsCertain: false
     reportUnmatchedIgnoredErrors: true

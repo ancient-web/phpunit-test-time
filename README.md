@@ -207,7 +207,7 @@ docker compose run --rm tests composer ci        # it + coverage + audit
 docker compose run --rm tests composer phar      # build a self-contained PHAR
 ```
 
-The quality pipeline runs coding standards (PHP-CS-Fixer), static analysis
+The quality pipeline runs coding standards (ECS), static analysis
 (PHPStan, level max), automated refactoring (Rector), and the test suite. `composer it`
 is offline-friendly; `composer coverage` needs a coverage driver (none is bundled), and
 `composer audit`/`composer ci` need network access. See

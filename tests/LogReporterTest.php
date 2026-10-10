@@ -7,13 +7,6 @@ namespace AncientWeb\PhpUnitTestTime\Tests;
 use AncientWeb\PhpUnitTestTime\Reporters\LogReporter;
 use AncientWeb\PhpUnitTestTime\TestTime;
 
-use function file_get_contents;
-use function file_put_contents;
-use function json_decode;
-use function strpos;
-use function time;
-use function touch;
-
 /**
  * Tests for the human-readable file log reporter.
  */
@@ -24,7 +17,7 @@ final class LogReporterTest extends AbstractTestCase
      */
     public function testWriteSortsDurationsInDescendingOrder(): void
     {
-        $path = $this->directory.'/test-time.log';
+        $path = $this->directory . '/test-time.log';
 
         new LogReporter($path)->report([
             'fast-test' => new TestTime(0.5),
@@ -32,11 +25,11 @@ final class LogReporterTest extends AbstractTestCase
             'medium-test' => new TestTime(1.5),
         ]);
 
-        $contents = (string) file_get_contents($path);
+        $contents = (string) \file_get_contents($path);
 
-        $slow = strpos($contents, 'slow-test');
-        $medium = strpos($contents, 'medium-test');
-        $fast = strpos($contents, 'fast-test');
+        $slow = \strpos($contents, 'slow-test');
+        $medium = \strpos($contents, 'medium-test');
+        $fast = \strpos($contents, 'fast-test');
 
         $this->assertNotFalse($slow);
         $this->assertNotFalse($medium);
@@ -52,14 +45,14 @@ final class LogReporterTest extends AbstractTestCase
      */
     public function testFiltersByMinimumDuration(): void
     {
-        $path = $this->directory.'/test-time.log';
+        $path = $this->directory . '/test-time.log';
 
         new LogReporter($path, null, 500)->report([
             'fast-test' => new TestTime(0.1),
             'slow-test' => new TestTime(1.0),
         ]);
 
-        $contents = (string) file_get_contents($path);
+        $contents = (string) \file_get_contents($path);
 
         $this->assertStringNotContainsString('fast-test', $contents);
         $this->assertStringContainsString('slow-test', $contents);
@@ -70,14 +63,14 @@ final class LogReporterTest extends AbstractTestCase
      */
     public function testLimitsByMaximumCount(): void
     {
-        $path = $this->directory.'/test-time.log';
+        $path = $this->directory . '/test-time.log';
 
         new LogReporter($path, null, 0, 1)->report([
             'fast-test' => new TestTime(0.1),
             'slow-test' => new TestTime(1.0),
         ]);
 
-        $contents = (string) file_get_contents($path);
+        $contents = (string) \file_get_contents($path);
 
         $this->assertStringNotContainsString('fast-test', $contents);
         $this->assertStringContainsString('slow-test', $contents);
@@ -88,17 +81,21 @@ final class LogReporterTest extends AbstractTestCase
      */
     public function testMergeKeepsMaximumDurationAcrossWorkers(): void
     {
-        $path = $this->directory.'/test-time.log';
+        $path = $this->directory . '/test-time.log';
 
-        new LogReporter($path, 'worker-1', 0, 0)->report(['shared-test' => new TestTime(1.0)]);
-        new LogReporter($path, 'worker-2', 0, 0)->report(['shared-test' => new TestTime(3.0)]);
+        new LogReporter($path, 'worker-1', 0, 0)->report([
+            'shared-test' => new TestTime(1.0),
+        ]);
+        new LogReporter($path, 'worker-2', 0, 0)->report([
+            'shared-test' => new TestTime(3.0),
+        ]);
 
-        $contents = (string) file_get_contents($path);
+        $contents = (string) \file_get_contents($path);
 
         $this->assertStringContainsString('3.0000 s', $contents);
         $this->assertStringNotContainsString('1.0000 s', $contents);
-        $this->assertFileDoesNotExist($this->directory.'/test-time.worker-1.json');
-        $this->assertFileDoesNotExist($this->directory.'/test-time.worker-2.json');
+        $this->assertFileDoesNotExist($this->directory . '/test-time.worker-1.json');
+        $this->assertFileDoesNotExist($this->directory . '/test-time.worker-2.json');
     }
 
     /**
@@ -106,14 +103,14 @@ final class LogReporterTest extends AbstractTestCase
      */
     public function testMergeKeepsPerTestMinimum(): void
     {
-        $path = $this->directory.'/test-time.log';
+        $path = $this->directory . '/test-time.log';
 
         new LogReporter($path, 'worker-1', 500, 0)->report([
             'allowed-test' => new TestTime(1.0, 2000),
             'slow-test' => new TestTime(0.6),
         ]);
 
-        $contents = (string) file_get_contents($path);
+        $contents = (string) \file_get_contents($path);
 
         $this->assertStringNotContainsString('allowed-test', $contents);
         $this->assertStringContainsString('slow-test', $contents);
@@ -124,12 +121,16 @@ final class LogReporterTest extends AbstractTestCase
      */
     public function testMergeRetainsMinimumFromAnyWorker(): void
     {
-        $path = $this->directory.'/test-time.log';
+        $path = $this->directory . '/test-time.log';
 
-        new LogReporter($path, 'worker-1', 500, 0)->report(['shared-test' => new TestTime(1.0)]);
-        new LogReporter($path, 'worker-2', 500, 0)->report(['shared-test' => new TestTime(1.0, 2000)]);
+        new LogReporter($path, 'worker-1', 500, 0)->report([
+            'shared-test' => new TestTime(1.0),
+        ]);
+        new LogReporter($path, 'worker-2', 500, 0)->report([
+            'shared-test' => new TestTime(1.0, 2000),
+        ]);
 
-        $contents = (string) file_get_contents($path);
+        $contents = (string) \file_get_contents($path);
 
         $this->assertStringNotContainsString('shared-test', $contents);
     }
@@ -139,15 +140,17 @@ final class LogReporterTest extends AbstractTestCase
      */
     public function testMergesWorkerReportsForPathsWithGlobCharacters(): void
     {
-        $path = $this->directory.'/re[port]*.log';
+        $path = $this->directory . '/re[port]*.log';
 
-        new LogReporter($path, 'worker-1', 0, 0)->report(['some-test' => new TestTime(1.0)]);
+        new LogReporter($path, 'worker-1', 0, 0)->report([
+            'some-test' => new TestTime(1.0),
+        ]);
 
-        $contents = (string) file_get_contents($path);
+        $contents = (string) \file_get_contents($path);
 
         $this->assertStringContainsString('some-test', $contents);
-        $this->assertFileExists($this->directory.'/re[port]*.json');
-        $this->assertFileDoesNotExist($this->directory.'/re[port]*.worker-1.json');
+        $this->assertFileExists($this->directory . '/re[port]*.json');
+        $this->assertFileDoesNotExist($this->directory . '/re[port]*.worker-1.json');
     }
 
     /**
@@ -155,16 +158,23 @@ final class LogReporterTest extends AbstractTestCase
      */
     public function testWritesMachineReadableAccumulator(): void
     {
-        $path = $this->directory.'/test-time.log';
+        $path = $this->directory . '/test-time.log';
 
-        new LogReporter($path, 'worker-1', 0, 0)->report(['shared-test' => new TestTime(1.0)]);
+        new LogReporter($path, 'worker-1', 0, 0)->report([
+            'shared-test' => new TestTime(1.0),
+        ]);
 
-        $accumulator = $this->directory.'/test-time.json';
+        $accumulator = $this->directory . '/test-time.json';
 
         $this->assertFileExists($accumulator);
         $this->assertSame(
-            ['shared-test' => ['duration' => 1.0, 'minimum' => null]],
-            json_decode((string) file_get_contents($accumulator), true),
+            [
+                'shared-test' => [
+                    'duration' => 1.0,
+                    'minimum' => null,
+                ],
+            ],
+            \json_decode((string) \file_get_contents($accumulator), true),
         );
     }
 
@@ -173,15 +183,22 @@ final class LogReporterTest extends AbstractTestCase
      */
     public function testAccumulatorKeepsPerTestMinimum(): void
     {
-        $path = $this->directory.'/test-time.log';
+        $path = $this->directory . '/test-time.log';
 
-        new LogReporter($path, 'worker-1', 0, 0)->report(['shared-test' => new TestTime(1.0, 2000)]);
+        new LogReporter($path, 'worker-1', 0, 0)->report([
+            'shared-test' => new TestTime(1.0, 2000),
+        ]);
 
-        $accumulator = $this->directory.'/test-time.json';
+        $accumulator = $this->directory . '/test-time.json';
 
         $this->assertSame(
-            ['shared-test' => ['duration' => 1.0, 'minimum' => 2000]],
-            json_decode((string) file_get_contents($accumulator), true),
+            [
+                'shared-test' => [
+                    'duration' => 1.0,
+                    'minimum' => 2000,
+                ],
+            ],
+            \json_decode((string) \file_get_contents($accumulator), true),
         );
     }
 
@@ -190,21 +207,21 @@ final class LogReporterTest extends AbstractTestCase
      */
     public function testResetRemovesStaleReportsAndKeepsRecentOnes(): void
     {
-        $path = $this->directory.'/test-time.log';
-        file_put_contents($path, 'stale');
-        touch($path, time() - 3600);
+        $path = $this->directory . '/test-time.log';
+        \file_put_contents($path, 'stale');
+        \touch($path, \time() - 3600);
 
-        $accumulatorPath = $this->directory.'/test-time.json';
-        file_put_contents($accumulatorPath, '{}');
-        touch($accumulatorPath, time() - 3600);
+        $accumulatorPath = $this->directory . '/test-time.json';
+        \file_put_contents($accumulatorPath, '{}');
+        \touch($accumulatorPath, \time() - 3600);
 
-        $workerPath = $this->directory.'/test-time.worker.json';
-        file_put_contents($workerPath, '{}');
-        touch($workerPath, time() - 3600);
+        $workerPath = $this->directory . '/test-time.worker.json';
+        \file_put_contents($workerPath, '{}');
+        \touch($workerPath, \time() - 3600);
 
-        $freshPath = $this->directory.'/test-time.fresh.json';
-        file_put_contents($freshPath, '{}');
-        touch($freshPath, time() + 3600);
+        $freshPath = $this->directory . '/test-time.fresh.json';
+        \file_put_contents($freshPath, '{}');
+        \touch($freshPath, \time() + 3600);
 
         new LogReporter($path)->reset();
 
@@ -219,9 +236,11 @@ final class LogReporterTest extends AbstractTestCase
      */
     public function testWriteCreatesMissingDirectory(): void
     {
-        $path = $this->directory.'/nested/deeper/test-time.log';
+        $path = $this->directory . '/nested/deeper/test-time.log';
 
-        new LogReporter($path)->report(['some-test' => new TestTime(1.0)]);
+        new LogReporter($path)->report([
+            'some-test' => new TestTime(1.0),
+        ]);
 
         $this->assertFileExists($path);
     }
@@ -231,11 +250,13 @@ final class LogReporterTest extends AbstractTestCase
      */
     public function testSanitizesUnsafeWorkerToken(): void
     {
-        $path = $this->directory.'/test-time.log';
+        $path = $this->directory . '/test-time.log';
 
-        new LogReporter($path, 'weird/token:1', 0, 0)->report(['some-test' => new TestTime(1.0)]);
+        new LogReporter($path, 'weird/token:1', 0, 0)->report([
+            'some-test' => new TestTime(1.0),
+        ]);
 
         $this->assertFileExists($path);
-        $this->assertStringContainsString('some-test', (string) file_get_contents($path));
+        $this->assertStringContainsString('some-test', (string) \file_get_contents($path));
     }
 }

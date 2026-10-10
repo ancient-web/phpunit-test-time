@@ -6,15 +6,6 @@ namespace AncientWeb\PhpUnitTestTime;
 
 use DateTimeImmutable;
 
-use function array_slice;
-use function count;
-use function implode;
-use function intdiv;
-use function mb_strlen;
-use function mb_substr;
-use function sprintf;
-use function uasort;
-
 /**
  * Test times prepared for output.
  */
@@ -23,7 +14,10 @@ final readonly class Report
     /**
      * @param array<string, TestTime> $testTimes Test times keyed by test identifier
      */
-    private function __construct(private array $testTimes) {}
+    private function __construct(
+        private array $testTimes
+    ) {
+    }
 
     /**
      * Create a report from collected test times.
@@ -45,7 +39,7 @@ final readonly class Report
      */
     public function withMinimumDuration(int $milliseconds): self
     {
-        if (0 === $milliseconds) {
+        if ($milliseconds === 0) {
             return $this;
         }
 
@@ -73,7 +67,7 @@ final readonly class Report
             return $this;
         }
 
-        return new self(array_slice($this->sortedDescending(), 0, $count, true));
+        return new self(\array_slice($this->sortedDescending(), 0, $count, true));
     }
 
     /**
@@ -85,7 +79,7 @@ final readonly class Report
     {
         $testTimes = $this->testTimes;
 
-        uasort($testTimes, static fn (TestTime $first, TestTime $second): int => $second->seconds <=> $first->seconds);
+        \uasort($testTimes, static fn (TestTime $first, TestTime $second): int => $second->seconds <=> $first->seconds);
 
         return $testTimes;
     }
@@ -95,7 +89,7 @@ final readonly class Report
      */
     public function count(): int
     {
-        return count($this->testTimes);
+        return \count($this->testTimes);
     }
 
     /**
@@ -122,22 +116,22 @@ final readonly class Report
     public function toText(string $title, DateTimeImmutable $generatedAt, int $maximumWidth = 0): string
     {
         $lines = [
-            sprintf('%s (%s)', $title, $generatedAt->format('Y-m-d H:i:s')),
-            sprintf('Total tests: %d, total time: %.4f s', $this->count(), $this->totalSeconds()),
+            \sprintf('%s (%s)', $title, $generatedAt->format('Y-m-d H:i:s')),
+            \sprintf('Total tests: %d, total time: %.4f s', $this->count(), $this->totalSeconds()),
             '',
         ];
 
         $position = 1;
 
         foreach ($this->sortedDescending() as $id => $testTime) {
-            $prefix = sprintf('%6d. %10.4f s  ', $position, $testTime->seconds);
+            $prefix = \sprintf('%6d. %10.4f s  ', $position, $testTime->seconds);
 
-            $lines[] = $prefix.$this->truncate($id, $maximumWidth - mb_strlen($prefix));
+            $lines[] = $prefix . $this->truncate($id, $maximumWidth - \mb_strlen($prefix));
 
             ++$position;
         }
 
-        return implode(PHP_EOL, $lines).PHP_EOL;
+        return \implode(PHP_EOL, $lines) . PHP_EOL;
     }
 
     /**
@@ -148,17 +142,17 @@ final readonly class Report
      */
     private function truncate(string $text, int $maximumLength): string
     {
-        if ($maximumLength <= 0 || mb_strlen($text) <= $maximumLength) {
+        if ($maximumLength <= 0 || \mb_strlen($text) <= $maximumLength) {
             return $text;
         }
 
         if ($maximumLength <= 3) {
-            return mb_substr($text, 0, $maximumLength);
+            return \mb_substr($text, 0, $maximumLength);
         }
 
-        $half = intdiv($maximumLength - 3, 2);
+        $half = \intdiv($maximumLength - 3, 2);
         $tailLength = $maximumLength - 3 - $half;
 
-        return mb_substr($text, 0, $half).'...'.($tailLength > 0 ? mb_substr($text, -$tailLength) : '');
+        return \mb_substr($text, 0, $half) . '...' . ($tailLength > 0 ? \mb_substr($text, -$tailLength) : '');
     }
 }

@@ -6,8 +6,6 @@ namespace AncientWeb\PhpUnitTestTime\Exception;
 
 use InvalidArgumentException;
 
-use function sprintf;
-
 /**
  * Thrown when a per-test maximum duration is not a positive integer.
  */
@@ -20,6 +18,6 @@ final class InvalidMaximumDuration extends InvalidArgumentException
      */
     public static function notGreaterThanZero(int $milliseconds): self
     {
-        return new self(sprintf('The maximum duration must be greater than zero, got %d.', $milliseconds));
+        return new self(\sprintf('The maximum duration must be greater than zero, got %d.', $milliseconds));
     }
 }

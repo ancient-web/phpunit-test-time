@@ -21,10 +21,6 @@ use PHPUnit\Runner\Extension\Facade;
 use PHPUnit\Runner\Extension\ParameterCollection;
 use PHPUnit\TextUI\Configuration\Configuration;
 
-use function getenv;
-use function getmypid;
-use function interface_exists;
-
 /**
  * PHPUnit extension that measures the execution time of each test.
  *
@@ -50,7 +46,7 @@ final class TestTimeExtension implements Extension
     {
         $subscribers = $this->subscribers($configuration, $parameters);
 
-        if ([] === $subscribers) {
+        if ($subscribers === []) {
             return;
         }
 
@@ -101,7 +97,7 @@ final class TestTimeExtension implements Extension
             $reporters[] = $reportWriter;
         }
 
-        if ($settings->console && null === $token) {
+        if ($settings->console && $token === null) {
             $reporters[] = new ConsoleReporter(
                 $configuration,
                 $settings->consoleMinimumDuration,
@@ -110,7 +106,7 @@ final class TestTimeExtension implements Extension
             );
         }
 
-        if ([] === $reporters) {
+        if ($reporters === []) {
             return [];
         }
 
@@ -125,7 +121,7 @@ final class TestTimeExtension implements Extension
         ];
 
         // PreparationErrored was introduced in PHPUnit 12.
-        if (interface_exists(PreparationErroredSubscriber::class)) {
+        if (\interface_exists(PreparationErroredSubscriber::class)) {
             $subscribers[] = new TestTimePreparationErroredSubscriber($collector);
         }
 
@@ -137,20 +133,20 @@ final class TestTimeExtension implements Extension
      */
     private function resolveToken(): ?string
     {
-        $token = getenv('TEST_TOKEN');
+        $token = \getenv('TEST_TOKEN');
 
-        if (false !== $token && '' !== $token) {
+        if ($token !== false && $token !== '') {
             return $token;
         }
 
-        $token = getenv('UNIQUE_TEST_TOKEN');
+        $token = \getenv('UNIQUE_TEST_TOKEN');
 
-        if (false !== $token && '' !== $token) {
+        if ($token !== false && $token !== '') {
             return $token;
         }
 
-        if (false !== getenv('PARATEST')) {
-            return (string) getmypid();
+        if (\getenv('PARATEST') !== false) {
+            return (string) \getmypid();
         }
 
         return null;

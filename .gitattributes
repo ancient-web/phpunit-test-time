@@ -2,7 +2,7 @@
 /bin export-ignore
 /.editorconfig export-ignore
 /.env.example export-ignore
-/.php-cs-fixer.php export-ignore
+/ecs.php export-ignore
 /phpstan.neon export-ignore
 /phpstan-baseline.neon export-ignore
 /rector.php export-ignore

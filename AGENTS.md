@@ -30,7 +30,7 @@ Quality tooling (all inside the container, via the `composer` scripts):
 
 ```bash
 docker compose run --rm tests composer it          # cs:check + stan + rector:check + test
-docker compose run --rm tests composer cs          # fix coding standards (PHP-CS-Fixer)
+docker compose run --rm tests composer cs          # fix coding standards (ECS)
 docker compose run --rm tests composer cs:check    # check coding standards only
 docker compose run --rm tests composer stan        # static analysis (PHPStan, level max)
 docker compose run --rm tests composer rector      # automated refactoring (Rector)
@@ -103,7 +103,8 @@ docker compose run --rm tests composer phar        # build the distributable PHA
 - Every file starts with `declare(strict_types=1);`.
 - Classes are `final`; DTO-like/value classes are `readonly`.
 - Every method and parameter has a docblock (the codebase style).
-- Global functions are imported explicitly, e.g. `use function file_get_contents;`.
+- Global classes are imported explicitly (`use DateTimeImmutable;`); global functions are not
+  imported (`import_functions` is disabled in `ecs.php`).
 - PSR-4: `AncientWeb\PhpUnitTestTime\` → `src/`, `AncientWeb\PhpUnitTestTime\Tests\` → `tests/`.
 - `composer.lock` is gitignored (library convention); the Docker entrypoint installs dependencies
   from it into the live-mounted `vendor/` on each run.

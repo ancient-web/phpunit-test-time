@@ -80,7 +80,9 @@ final class SettingsTest extends AbstractTestCase
     {
         $this->expectException(InvalidParameter::class);
 
-        Settings::fromParameters(ParameterCollection::fromArray(['console' => 'maybe']));
+        Settings::fromParameters(ParameterCollection::fromArray([
+            'console' => 'maybe',
+        ]));
     }
 
     /**
@@ -90,7 +92,9 @@ final class SettingsTest extends AbstractTestCase
     {
         $this->expectException(InvalidParameter::class);
 
-        Settings::fromParameters(ParameterCollection::fromArray(['console-count' => '-1']));
+        Settings::fromParameters(ParameterCollection::fromArray([
+            'console-count' => '-1',
+        ]));
     }
 
     /**
@@ -100,21 +104,27 @@ final class SettingsTest extends AbstractTestCase
     {
         $this->assertSame(
             100,
-            Settings::fromParameters(ParameterCollection::fromArray(['console-maximum-width' => '100']))->consoleMaximumWidth,
+            Settings::fromParameters(ParameterCollection::fromArray([
+                'console-maximum-width' => '100',
+            ]))->consoleMaximumWidth,
         );
 
         putenv('COLUMNS=120');
 
         $this->assertSame(
             120,
-            Settings::fromParameters(ParameterCollection::fromArray(['console-maximum-width' => 'max']))->consoleMaximumWidth,
+            Settings::fromParameters(ParameterCollection::fromArray([
+                'console-maximum-width' => 'max',
+            ]))->consoleMaximumWidth,
         );
 
         putenv('COLUMNS');
 
         $this->assertSame(
             80,
-            Settings::fromParameters(ParameterCollection::fromArray(['console-maximum-width' => 'max']))->consoleMaximumWidth,
+            Settings::fromParameters(ParameterCollection::fromArray([
+                'console-maximum-width' => 'max',
+            ]))->consoleMaximumWidth,
         );
     }
 }

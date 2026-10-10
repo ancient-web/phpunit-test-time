@@ -10,13 +10,6 @@ use AncientWeb\PhpUnitTestTime\Report;
 use AncientWeb\PhpUnitTestTime\TestTime;
 use Override;
 
-use function dirname;
-use function fclose;
-use function fopen;
-use function fputcsv;
-use function preg_match;
-use function sprintf;
-
 /**
  * Writes the test execution time report as CSV.
  */
@@ -41,7 +34,7 @@ final readonly class CsvReporter extends AbstractFileReporter
         private int $maximumCount = 0,
         private string $separator = ';',
     ) {
-        if (1 !== preg_match(self::ALLOWED_SEPARATOR, $separator)) {
+        if (\preg_match(self::ALLOWED_SEPARATOR, $separator) !== 1) {
             throw InvalidParameter::notAnAllowedCsvSeparator($separator);
         }
 
@@ -61,21 +54,21 @@ final readonly class CsvReporter extends AbstractFileReporter
             ->withMaximumCount($this->maximumCount)
         ;
 
-        $this->ensureDirectory(dirname($this->reportPath));
+        $this->ensureDirectory(\dirname($this->reportPath));
 
-        $file = fopen($this->reportPath, 'w');
+        $file = \fopen($this->reportPath, 'w');
 
-        if (false === $file) {
+        if ($file === false) {
             throw ReportWriteFailed::write($this->reportPath);
         }
 
-        fputcsv($file, ['Test case', 'Execution time (s)'], $this->separator, escape: '\\');
+        \fputcsv($file, ['Test case', 'Execution time (s)'], $this->separator, escape: '\\');
 
         foreach ($report->sortedDescending() as $id => $testTime) {
-            fputcsv($file, [$id, sprintf('%0.4f', $testTime->seconds)], $this->separator, escape: '\\');
+            \fputcsv($file, [$id, \sprintf('%0.4f', $testTime->seconds)], $this->separator, escape: '\\');
         }
 
-        if (false === fclose($file)) {
+        if (\fclose($file) === false) {
             throw ReportWriteFailed::write($this->reportPath);
         }
     }

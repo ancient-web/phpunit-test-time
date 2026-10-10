@@ -6,8 +6,6 @@ namespace AncientWeb\PhpUnitTestTime;
 
 use PHPUnit\Event\Telemetry\HRTime;
 
-use function array_values;
-
 /**
  * Collects the execution duration of each test.
  */
@@ -38,7 +36,7 @@ final class TestTimeCollector
      */
     public function __construct(Reporter ...$reporters)
     {
-        $this->reporters = array_values($reporters);
+        $this->reporters = \array_values($reporters);
     }
 
     /**
@@ -63,7 +61,7 @@ final class TestTimeCollector
      */
     public function finish(string $testId, HRTime $time): void
     {
-        if (!isset($this->started[$testId])) {
+        if (! isset($this->started[$testId])) {
             return;
         }
 

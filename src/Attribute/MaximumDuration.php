@@ -18,8 +18,9 @@ final readonly class MaximumDuration
      *
      * @throws InvalidMaximumDuration
      */
-    public function __construct(public int $milliseconds)
-    {
+    public function __construct(
+        public int $milliseconds
+    ) {
         if ($milliseconds <= 0) {
             throw InvalidMaximumDuration::notGreaterThanZero($milliseconds);
         }

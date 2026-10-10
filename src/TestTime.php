@@ -16,5 +16,6 @@ final readonly class TestTime
     public function __construct(
         public float $seconds,
         public ?int $minimumMilliseconds = null,
-    ) {}
+    ) {
+    }
 }

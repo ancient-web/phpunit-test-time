@@ -8,11 +8,6 @@ use AncientWeb\PhpUnitTestTime\Report;
 use AncientWeb\PhpUnitTestTime\TestTime;
 use DateTimeImmutable;
 
-use function array_keys;
-use function explode;
-use function mb_strlen;
-use function trim;
-
 /**
  * Tests for preparing and rendering the report.
  */
@@ -48,7 +43,7 @@ final class ReportTest extends AbstractTestCase
             ->withMaximumCount(2)
         ;
 
-        $this->assertSame(['slow', 'medium'], array_keys($report->sortedDescending()));
+        $this->assertSame(['slow', 'medium'], \array_keys($report->sortedDescending()));
     }
 
     /**
@@ -81,7 +76,7 @@ final class ReportTest extends AbstractTestCase
             ->withMinimumDuration(500)
         ;
 
-        $this->assertSame(['slow'], array_keys($report->sortedDescending()));
+        $this->assertSame(['slow'], \array_keys($report->sortedDescending()));
     }
 
     /**
@@ -105,14 +100,16 @@ final class ReportTest extends AbstractTestCase
     {
         $id = 'AncientWeb\PhpUnitTestTime\Tests\SomeVeryLongTestClassName::testSomethingLong';
 
-        $report = Report::fromTestTimes([$id => new TestTime(1.0)]);
+        $report = Report::fromTestTimes([
+            $id => new TestTime(1.0),
+        ]);
 
         $text = $report->toText('Title', new DateTimeImmutable('2026-01-01 12:00:00'), 60);
 
         $this->assertStringContainsString('...', $text);
 
-        foreach (explode(PHP_EOL, trim($text)) as $line) {
-            $this->assertLessThanOrEqual(60, mb_strlen($line));
+        foreach (\explode(PHP_EOL, \trim($text)) as $line) {
+            $this->assertLessThanOrEqual(60, \mb_strlen($line));
         }
     }
 }

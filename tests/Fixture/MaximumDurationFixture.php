@@ -15,24 +15,32 @@ final class MaximumDurationFixture
      * Method with the attribute.
      */
     #[MaximumDuration(2000)]
-    public function withAttribute(): void {}
+    public function withAttribute(): void
+    {
+    }
 
     /**
      * Method with the @maximumDuration annotation.
      *
      * @maximumDuration 3000
      */
-    public function withMaximumDurationAnnotation(): void {}
+    public function withMaximumDurationAnnotation(): void
+    {
+    }
 
     /**
      * Method with the @slowThreshold annotation.
      *
      * @slowThreshold 4000
      */
-    public function withSlowThresholdAnnotation(): void {}
+    public function withSlowThresholdAnnotation(): void
+    {
+    }
 
     /**
      * Method without an override.
      */
-    public function withoutOverride(): void {}
+    public function withoutOverride(): void
+    {
+    }
 }

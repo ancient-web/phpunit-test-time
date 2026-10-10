@@ -7,12 +7,6 @@ namespace AncientWeb\PhpUnitTestTime;
 use AncientWeb\PhpUnitTestTime\Attribute\MaximumDuration;
 use ReflectionMethod;
 
-use function explode;
-use function method_exists;
-use function preg_match;
-use function preg_split;
-use function str_contains;
-
 /**
  * Resolves the per-test maximum duration from an attribute or a doc-block annotation.
  */
@@ -32,7 +26,7 @@ final class MaximumDurationResolver
     {
         $method = self::methodFor($testId);
 
-        if (!$method instanceof ReflectionMethod) {
+        if (! $method instanceof ReflectionMethod) {
             return null;
         }
 
@@ -46,16 +40,16 @@ final class MaximumDurationResolver
      */
     private static function methodFor(string $testId): ?ReflectionMethod
     {
-        if (!str_contains($testId, '::')) {
+        if (! \str_contains($testId, '::')) {
             return null;
         }
 
-        [$class, $rest] = explode('::', $testId, 2);
+        [$class, $rest] = \explode('::', $testId, 2);
 
-        $parts = preg_split('/[ #]/', $rest, 2);
-        $name = false === $parts || [] === $parts ? $rest : $parts[0];
+        $parts = \preg_split('/[ #]/', $rest, 2);
+        $name = $parts === false || $parts === [] ? $rest : $parts[0];
 
-        if (!method_exists($class, $name)) {
+        if (! \method_exists($class, $name)) {
             return null;
         }
 
@@ -71,7 +65,7 @@ final class MaximumDurationResolver
     {
         $attribute = $method->getAttributes(MaximumDuration::class)[0] ?? null;
 
-        if (null === $attribute) {
+        if ($attribute === null) {
             return null;
         }
 
@@ -87,12 +81,12 @@ final class MaximumDurationResolver
     {
         $docComment = $method->getDocComment();
 
-        if (false === $docComment) {
+        if ($docComment === false) {
             return null;
         }
 
         foreach (self::ANNOTATIONS as $annotation) {
-            if (1 !== preg_match('/@'.$annotation.'\s+(\d+)/', $docComment, $matches)) {
+            if (\preg_match('/@' . $annotation . '\s+(\d+)/', $docComment, $matches) !== 1) {
                 continue;
             }
 

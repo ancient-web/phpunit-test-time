@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace AncientWeb\PhpUnitTestTime;
 
-use function getenv;
-use function max;
-use function preg_match;
-
 /**
  * Detects the terminal width.
  */
@@ -28,12 +24,12 @@ final class Terminal
      */
     public static function width(): int
     {
-        $columns = getenv('COLUMNS');
+        $columns = \getenv('COLUMNS');
 
-        if (false === $columns || 1 !== preg_match('/^\d+$/', $columns)) {
+        if ($columns === false || \preg_match('/^\d+$/', $columns) !== 1) {
             return self::DEFAULT_WIDTH;
         }
 
-        return max(self::MINIMUM_WIDTH, (int) $columns);
+        return \max(self::MINIMUM_WIDTH, (int) $columns);
     }
 }

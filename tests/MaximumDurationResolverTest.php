@@ -17,7 +17,7 @@ final class MaximumDurationResolverTest extends AbstractTestCase
      */
     public function testResolvesAttribute(): void
     {
-        $this->assertSame(2000, MaximumDurationResolver::resolve(MaximumDurationFixture::class.'::withAttribute'));
+        $this->assertSame(2000, MaximumDurationResolver::resolve(MaximumDurationFixture::class . '::withAttribute'));
     }
 
     /**
@@ -27,7 +27,7 @@ final class MaximumDurationResolverTest extends AbstractTestCase
     {
         $this->assertSame(
             3000,
-            MaximumDurationResolver::resolve(MaximumDurationFixture::class.'::withMaximumDurationAnnotation'),
+            MaximumDurationResolver::resolve(MaximumDurationFixture::class . '::withMaximumDurationAnnotation'),
         );
     }
 
@@ -38,7 +38,7 @@ final class MaximumDurationResolverTest extends AbstractTestCase
     {
         $this->assertSame(
             4000,
-            MaximumDurationResolver::resolve(MaximumDurationFixture::class.'::withSlowThresholdAnnotation'),
+            MaximumDurationResolver::resolve(MaximumDurationFixture::class . '::withSlowThresholdAnnotation'),
         );
     }
 
@@ -47,7 +47,7 @@ final class MaximumDurationResolverTest extends AbstractTestCase
      */
     public function testReturnsNullWithoutOverride(): void
     {
-        $this->assertNull(MaximumDurationResolver::resolve(MaximumDurationFixture::class.'::withoutOverride'));
+        $this->assertNull(MaximumDurationResolver::resolve(MaximumDurationFixture::class . '::withoutOverride'));
     }
 
     /**
@@ -55,10 +55,10 @@ final class MaximumDurationResolverTest extends AbstractTestCase
      */
     public function testIgnoresDataSetSuffix(): void
     {
-        $this->assertSame(2000, MaximumDurationResolver::resolve(MaximumDurationFixture::class.'::withAttribute#0'));
+        $this->assertSame(2000, MaximumDurationResolver::resolve(MaximumDurationFixture::class . '::withAttribute#0'));
         $this->assertSame(
             2000,
-            MaximumDurationResolver::resolve(MaximumDurationFixture::class.'::withAttribute with data set #0'),
+            MaximumDurationResolver::resolve(MaximumDurationFixture::class . '::withAttribute with data set #0'),
         );
     }
 

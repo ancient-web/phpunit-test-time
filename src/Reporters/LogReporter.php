@@ -10,9 +10,6 @@ use AncientWeb\PhpUnitTestTime\TestTime;
 use DateTimeImmutable;
 use Override;
 
-use function dirname;
-use function file_put_contents;
-
 final readonly class LogReporter extends AbstractFileReporter
 {
     /**
@@ -43,11 +40,11 @@ final readonly class LogReporter extends AbstractFileReporter
             ->withMaximumCount($this->maximumCount)
         ;
 
-        $this->ensureDirectory(dirname($this->reportPath));
+        $this->ensureDirectory(\dirname($this->reportPath));
 
         $contents = $report->toText('Test execution time report', new DateTimeImmutable());
 
-        if (false === file_put_contents($this->reportPath, $contents)) {
+        if (\file_put_contents($this->reportPath, $contents) === false) {
             throw ReportWriteFailed::write($this->reportPath);
         }
     }
