@@ -49,8 +49,8 @@ docker compose run --rm tests composer phar        # build the distributable PHA
   maximum count, sorting, truncation, rendering the human table).
 - `src/TestTime.php` — value object: a measured duration and an optional per-test minimum.
 - `src/Terminal.php` — detects the terminal width from `COLUMNS` for `console-maximum-width=max`.
-- `src/Reporter.php` + `src/ConsoleReporter.php` + `src/TestTimeReportWriter.php` — the console
-  reporter and the (merging) file reporter.
+- `src/Reporter.php` + `src/Reporters/*` — the console reporter, and the abstract merging file
+  reporter (`AbstractFileReporter`) with its `LogReporter` and `CsvReporter` subclasses.
 - `src/Subscriber/*` — thin adapters translating PHPUnit test lifecycle events
   (`PreparationStarted/Errored/Failed`, `Finished`, `ExecutionFinished/Aborted`) into
   `collector->start()/finish()/writeReport()`.
@@ -62,28 +62,31 @@ docker compose run --rm tests composer phar        # build the distributable PHA
 
 ## Behavior you must not break
 
-- **Two formats.** Worker logs and the shared accumulator are JSON (machine-readable); each
-  entry is `{"duration": <float>, "minimum": <int|null>}`. The human report (`<base>.log`) is
-  rendered from the accumulator. Merging never parses the human report, so its line format can
-  change freely.
+- **Two machine formats, two human outputs.** Worker logs and the shared accumulator are JSON
+  (machine-readable); each entry is `{"duration": <float>, "minimum": <int|null>}`. The human
+  outputs — the log table (`<base>.log`) and the CSV report (`<base>.csv`) — are rendered from the
+  accumulator. Merging never parses the human outputs, so their formats can change freely.
 - **Paratest merging.** A worker token is resolved from `TEST_TOKEN`, then `UNIQUE_TEST_TOKEN`,
   then pid when `PARATEST` is set; otherwise there is no token and the human report is written
   directly. With a token, the worker writes `<base>.<token>.json`, then merges every
   `<base>.*.json` worker log plus the `<base>.json` accumulator under `LOCK_EX`, keeping the
-  **maximum** duration per test, writes the accumulator and `<base>.log`, and deletes the worker
-  logs. Base path strips a trailing `.log`.
+  **maximum** duration per test, writes the accumulator and the human output (`<base>.log` and/or
+  `<base>.csv`), and deletes the worker logs. The base strips the reporter's own report extension
+  (`.log` or `.csv`), so a log and a CSV report that share a name stem also share the accumulator
+  (and do not treat each other's files as worker logs).
 - **Configuration is parameter-only.** All settings come from `phpunit.xml` `<parameter>` elements
   (`Settings::fromParameters`); there is no enable flag and no configuration environment variable.
   Registering the extension is what enables it.
 - **Console vs file.** The console report is printed only when not in paratest (every worker is a
   separate process) and respects PHPUnit's `noOutput()`/`outputToStandardErrorStream()`. The file
-  log is the only paratest output and merges all workers. The console report is on by default
-  (minimum 500 ms, top 10); the file log is off by default.
+  reports (log and/or CSV) are the only paratest outputs and merge all workers. The console report
+  is on by default (minimum 500 ms, top 10); the file log and CSV report are off by default.
 - **Env is only for paratest.** `getenv()` is used solely to resolve the worker token
   (`TEST_TOKEN`, then `UNIQUE_TEST_TOKEN`, then pid when `PARATEST` is set); tests clear these in
   `setUp()/tearDown()` because the process is shared.
-- **Default log path:** the `log-file` parameter, otherwise `<getcwd()>/var/test-time.log` (the
-  `var/` dir is gitignored).
+- **Default log/CSV paths:** the `log-file` parameter, otherwise `<getcwd()>/var/test-time.log`,
+  and the `csv-file` parameter, otherwise `<getcwd()>/var/test-time.csv` (the `var/` dir is
+  gitignored).
 - **PHPUnit 10–13.** `PreparationErrored` was introduced in PHPUnit 12, so its subscriber is
   registered only when the interface exists. The collector takes test id strings, not
   `Event\Code\Test` objects, because that class is `readonly` only from PHPUnit 11 (a `readonly`

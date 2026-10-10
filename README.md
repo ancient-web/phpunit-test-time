@@ -1,13 +1,13 @@
 # ancient-web/phpunit-test-time
 
 A PHPUnit extension that measures the execution time of each test and, at the end of the run,
-reports the slowest ones. The report is printed to the console by default; a file log can be
-enabled as well.
+reports the slowest ones. The report is printed to the console by default; a file log and/or a CSV
+report can be enabled as well.
 
 Parallel runs via `paratest` are supported: each worker writes its own intermediate log, then all
 logs are merged into a single report under an exclusive lock (for the same test the maximum
-duration is kept). In parallel runs only the file log is produced — the console report is skipped,
-because every worker is a separate process.
+duration is kept). In parallel runs only the file reports are produced — the console report is
+skipped, because every worker is a separate process.
 
 ## Compatibility
 
@@ -37,21 +37,21 @@ Register the extension in `phpunit.xml.dist`:
 
 All settings are `<parameter>` elements. Durations are in milliseconds; `0` means “no limit”.
 
-| Parameter                  | Type        | Default             | Description                                                                           |
-|----------------------------|-------------|---------------------|---------------------------------------------------------------------------------------|
-| `console`                  | bool        | `true`              | print the report to the console                                                       |
-| `console-minimum-duration` | int         | `500`               | console shows only tests at or above this duration                                    |
-| `console-count`            | int         | `10`                | maximum number of tests in the console report                                         |
+| Parameter                  | Type        | Default             | Description                                                                                 |
+|----------------------------|-------------|---------------------|---------------------------------------------------------------------------------------------|
+| `console`                  | bool        | `true`              | print the report to the console                                                             |
+| `console-minimum-duration` | int         | `500`               | console shows only tests at or above this duration                                          |
+| `console-count`            | int         | `10`                | maximum number of tests in the console report                                               |
 | `console-maximum-width`    | int / `max` | `0`                 | truncate console lines to this width (`0` = no truncation, `max` = detected terminal width) |
-| `log`                      | bool        | `false`             | write the file log                                                                    |
-| `log-file`                 | string      | `var/test-time.log` | path to the file log                                                                  |
-| `log-minimum-duration`     | int         | `0`                 | file log threshold (by default everything is written)                                 |
-| `log-count`                | int         | `0`                 | maximum number of tests in the file log                                               |
- `csv`                      | bool        | `false`             | write the csv                                                                         |
-| `csv-file`                 | string      | `var/test-time.csv` | path to the csv file                                                                  |
-| `csv-minimum-duration`     | int         | `0`                 | csv file threshold (by default everything is written)                                 |
-| `csv-count`                | int         | `0`                 | maximum number of tests in the csv file                                               |
-| `csv-separator`            | string      | `;`                 | csv separator for file, allowed: `,;\|:\t`                                            |
+| `log`                      | bool        | `false`             | write the file log                                                                          |
+| `log-file`                 | string      | `var/test-time.log` | path to the file log                                                                        |
+| `log-minimum-duration`     | int         | `0`                 | file log threshold (by default everything is written)                                       |
+| `log-count`                | int         | `0`                 | maximum number of tests in the file log                                                     |
+| `csv`                      | bool        | `false`             | write the CSV report                                                                        |
+| `csv-file`                 | string      | `var/test-time.csv` | path to the CSV report                                                                      |
+| `csv-minimum-duration`     | int         | `0`                 | CSV report threshold (by default everything is written)                                     |
+| `csv-count`                | int         | `0`                 | maximum number of tests in the CSV report                                                   |
+| `csv-separator`            | string      | `;`                 | CSV field separator: comma, semicolon, colon, tab or pipe                                   |
 
 For example, to report the ten slowest tests on the console and write everything to a file log:
 
@@ -97,12 +97,12 @@ file log); an output configured to show everything (`0`) is not affected.
 ## Paratest
 
 Parallel runs with [`paratest`](https://github.com/paratestphp/paratest) are supported. Because
-every worker is a separate PHP process, the console report is skipped: the file log is the only
-output and is merged from all workers under an exclusive lock (for a test that ran in several
-workers the maximum duration is kept).
+every worker is a separate PHP process, the console report is skipped: the file log and/or the CSV
+report are the only outputs and are merged from all workers under an exclusive lock (for a test
+that ran in several workers the maximum duration is kept).
 
 The worker token is read from `TEST_TOKEN` (falling back to `UNIQUE_TEST_TOKEN`, then the process
-id when `PARATEST` is set). Point `log-file` at a shared path:
+id when `PARATEST` is set). Point `log-file` and/or `csv-file` at a shared path:
 
 ```xml
 <extensions>
@@ -116,9 +116,10 @@ id when `PARATEST` is set). Point `log-file` at a shared path:
 ```
 
 Each worker writes `<base>.<token>.json`, the workers merge every worker log plus the
-`<base>.json` accumulator, render `<base>.log`, and remove the worker logs. A per-test
-`#[MaximumDuration]` resolved by one worker is carried through the merge, so it still filters the
-merged report.
+`<base>.json` accumulator, render the human report (`<base>.log` and/or `<base>.csv`), and remove
+the worker logs. The base strips the report extension, so a log and a CSV report that share a name
+stem (as the defaults do) also share the merged accumulator. A per-test `#[MaximumDuration]`
+resolved by one worker is carried through the merge, so it still filters the merged report.
 
 ## Troubleshooting
 
@@ -127,12 +128,15 @@ merged report.
   intentionally skipped, and PHPUnit's `--no-output` disables it too.
 - **No file log.** Check that `log` is not `false` and that `log-file` is writable (the default is
   `getcwd()/var/test-time.log`; its directory is created automatically).
+- **No CSV report.** Check that `csv` is not `false` and that `csv-file` is writable (the default
+  is `getcwd()/var/test-time.csv`; its directory is created automatically). `csv-separator` must be
+  one of `,`, `;`, `|`, `:`, or a tab.
 - **A test is missing.** Its duration is below the output's minimum, it was cut off by
-  `console-count`/`log-count`, or a per-test `MaximumDuration` raised its own threshold. A
-  per-test override only applies to outputs whose minimum duration is non-zero.
-- **Invalid parameter.** `InvalidParameter` is thrown for a non-boolean `console`/`log`, a
-  non-negative-integer duration/count, or a `console-maximum-width` that is neither a
-  non-negative integer nor `max`.
+  `console-count`/`log-count`/`csv-count`, or a per-test `MaximumDuration` raised its own
+  threshold. A per-test override only applies to outputs whose minimum duration is non-zero.
+- **Invalid parameter.** `InvalidParameter` is thrown for a non-boolean `console`/`log`/`csv`, a
+  non-negative-integer duration/count, an invalid `csv-separator`, or a `console-maximum-width`
+  that is neither a non-negative integer nor `max`.
 
 ## Report format
 
@@ -143,6 +147,16 @@ Total tests: 3, total time: 4.5000 s
      1.     2.5000 s  App\Tests\SlowTest::testSomething
      2.     1.5000 s  App\Tests\MediumTest::testSomething
      3.     0.5000 s  App\Tests\FastTest::testSomething
+```
+
+The CSV report has a header and one row per test, sorted by duration descending. Durations are
+plain seconds, so the file stays machine-readable:
+
+```
+Test case;Execution time (s)
+App\Tests\SlowTest::testSomething;2.5000
+App\Tests\MediumTest::testSomething;1.5000
+App\Tests\FastTest::testSomething;0.5000
 ```
 
 ## Comparison with other extensions
@@ -156,7 +170,7 @@ October 2026, based on each project's documentation).
 | | phpunit-test-time | ergebnis/phpunit-slow-test-detector | johnkary/phpunit-speedtrap |
 | --- | :---: | :---: | :---: |
 | Console report | yes (on by default) | yes | yes |
-| File report | yes (opt-in) | no | no |
+| File report | yes (log + CSV, opt-in) | no | no |
 | Threshold per output | yes (console and file separately) | no (one global) | no (one global) |
 | Slow-test limit | yes (10) | yes (10) | yes (10) |
 | Console width truncation | yes (int / `max`) | yes (int / `max`) | no |
@@ -173,8 +187,9 @@ October 2026, based on each project's documentation).
 ² Neither extension merges reports across paratest workers: each worker prints its own console
 report.
 
-In short, this package adds a machine-readable file log that is merged across paratest workers and
-preserves per-test thresholds through the merge, while `ergebnis/phpunit-slow-test-detector`
+In short, this package adds machine-readable file logs (a human-readable log and a CSV report) that
+are merged across paratest workers and preserve per-test thresholds through the merge, while
+`ergebnis/phpunit-slow-test-detector`
 focuses on a single console table and can emit GitHub Actions annotations. Both accept the
 `@slowThreshold` annotation for a smooth migration from `johnkary/phpunit-speedtrap`.
 

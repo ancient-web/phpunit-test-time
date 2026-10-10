@@ -15,9 +15,9 @@ use function time;
 use function touch;
 
 /**
- * Tests for the test execution time report writer.
+ * Tests for the human-readable file log reporter.
  */
-final class TestTimeReportWriterTest extends AbstractTestCase
+final class LogReporterTest extends AbstractTestCase
 {
     /**
      * The report is sorted by test duration descending.

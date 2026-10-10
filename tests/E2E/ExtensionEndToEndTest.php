@@ -9,6 +9,7 @@ use function explode;
 use function file_get_contents;
 use function mb_strlen;
 use function str_contains;
+use function str_getcsv;
 
 /**
  * End-to-end tests that run the real extension in a separate PHPUnit process.
@@ -127,7 +128,7 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
     }
 
     /**
-     * The file report is written and filtered by the log minimum duration.
+     * The CSV report is written with the configured separator and filtered by the CSV minimum duration.
      */
     public function testWritesTheCsvReport(): void
     {
@@ -139,6 +140,7 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
                 'csv' => 'true',
                 'csv-file' => $path,
                 'csv-minimum-duration' => '500',
+                'csv-separator' => '|',
             ],
             ['SlowAndFastTest.php' => $this->slowAndFastTest()],
         );
@@ -148,6 +150,10 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
 
         $contents = (string) file_get_contents($path);
 
+        $this->assertSame(
+            ['Test case', 'Execution time (s)'],
+            str_getcsv(explode(PHP_EOL, $contents)[0], '|', '"', '\\'),
+        );
         $this->assertStringContainsString('testSlowTest', $contents);
         $this->assertStringNotContainsString('testFastTest', $contents);
     }
@@ -203,6 +209,76 @@ final class ExtensionEndToEndTest extends AbstractEndToEndTestCase
         // The console report is skipped while running in paratest.
         $this->assertStringNotContainsString('Test execution time report', $first['output']);
         $this->assertStringNotContainsString('Test execution time report', $second['output']);
+    }
+
+    /**
+     * Concurrent CSV worker runs are merged into a single CSV report.
+     */
+    public function testMergesParatestCsvWorkerReports(): void
+    {
+        $path = $this->directory.'/test-time.csv';
+
+        $configPath = $this->prepareConfiguration(
+            ['console' => 'false', 'csv' => 'true', 'csv-file' => $path],
+            ['TokenTest.php' => $this->tokenTest()],
+        );
+
+        $first = $this->finish($this->startProcess($configPath, ['TEST_TOKEN' => '1']));
+        $second = $this->finish($this->startProcess($configPath, ['TEST_TOKEN' => '2']));
+
+        $this->assertSame(0, $first['exitCode'], $first['error']);
+        $this->assertSame(0, $second['exitCode'], $second['error']);
+
+        $contents = (string) file_get_contents($path);
+
+        $this->assertStringContainsString('testShared', $contents);
+        $this->assertStringContainsString('0.5', $contents);
+        $this->assertStringNotContainsString('0.1', $contents);
+
+        // The CSV reporter shares the machine log base with the log reporter.
+        $this->assertFileExists($this->directory.'/test-time.json');
+        $this->assertFileDoesNotExist($this->directory.'/test-time.csv.json');
+        $this->assertFileDoesNotExist($this->directory.'/test-time.1.json');
+        $this->assertFileDoesNotExist($this->directory.'/test-time.2.json');
+    }
+
+    /**
+     * The log and CSV reports can be enabled together without consuming each other's machine logs.
+     */
+    public function testWritesLogAndCsvReportsTogether(): void
+    {
+        $logPath = $this->directory.'/test-time.log';
+        $csvPath = $this->directory.'/test-time.csv';
+
+        $configPath = $this->prepareConfiguration(
+            [
+                'console' => 'false',
+                'log' => 'true',
+                'log-file' => $logPath,
+                'csv' => 'true',
+                'csv-file' => $csvPath,
+            ],
+            ['TokenTest.php' => $this->tokenTest()],
+        );
+
+        $first = $this->finish($this->startProcess($configPath, ['TEST_TOKEN' => '1']));
+        $second = $this->finish($this->startProcess($configPath, ['TEST_TOKEN' => '2']));
+
+        $this->assertSame(0, $first['exitCode'], $first['error']);
+        $this->assertSame(0, $second['exitCode'], $second['error']);
+
+        $log = (string) file_get_contents($logPath);
+        $csv = (string) file_get_contents($csvPath);
+
+        $this->assertStringContainsString('testShared', $log);
+        $this->assertStringContainsString('0.5', $log);
+        $this->assertStringContainsString('testShared', $csv);
+        $this->assertStringContainsString('0.5', $csv);
+
+        $this->assertFileExists($this->directory.'/test-time.json');
+        $this->assertFileDoesNotExist($this->directory.'/test-time.csv.json');
+        $this->assertFileDoesNotExist($this->directory.'/test-time.1.json');
+        $this->assertFileDoesNotExist($this->directory.'/test-time.2.json');
     }
 
     /**

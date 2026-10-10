@@ -8,18 +8,31 @@ use AncientWeb\PhpUnitTestTime\Exception\InvalidParameter;
 use AncientWeb\PhpUnitTestTime\Exception\ReportWriteFailed;
 use AncientWeb\PhpUnitTestTime\Report;
 use AncientWeb\PhpUnitTestTime\TestTime;
+use Override;
 
 use function dirname;
+use function fclose;
+use function fopen;
+use function fputcsv;
+use function preg_match;
+use function sprintf;
 
+/**
+ * Writes the test execution time report as CSV.
+ */
 final readonly class CsvReporter extends AbstractFileReporter
 {
+    /**
+     * The separators accepted from the "csv-separator" parameter.
+     */
     private const string ALLOWED_SEPARATOR = '/^[,;|:\t]$/';
 
     /**
      * @param string $reportPath Path to the shared report file
+     * @param null|string $token Worker token, or null when not running in paratest
      * @param int $minimumDuration Minimum duration in milliseconds
      * @param int $maximumCount Maximum number of tests (0 = unlimited)
-     * @param null|string $token Worker token, or null when not running in paratest
+     * @param string $separator Field separator (one of `,`, `;`, `|`, `:`, or a tab)
      */
     public function __construct(
         string $reportPath,
@@ -28,9 +41,10 @@ final readonly class CsvReporter extends AbstractFileReporter
         private int $maximumCount = 0,
         private string $separator = ';',
     ) {
-        if (false === preg_match(self::ALLOWED_SEPARATOR, $separator)) {
-            throw new InvalidParameter('Недопустимый разделитель CSV');
+        if (1 !== preg_match(self::ALLOWED_SEPARATOR, $separator)) {
+            throw InvalidParameter::notAnAllowedCsvSeparator($separator);
         }
+
         parent::__construct($reportPath, $token);
     }
 
@@ -39,6 +53,7 @@ final readonly class CsvReporter extends AbstractFileReporter
      *
      * @param array<string, TestTime> $testTimes Test times keyed by test identifier
      */
+    #[Override]
     protected function writeReport(array $testTimes): void
     {
         $report = Report::fromTestTimes($testTimes)
@@ -49,21 +64,28 @@ final readonly class CsvReporter extends AbstractFileReporter
         $this->ensureDirectory(dirname($this->reportPath));
 
         $file = fopen($this->reportPath, 'w');
+
         if (false === $file) {
             throw ReportWriteFailed::write($this->reportPath);
         }
-        fputcsv($file, ['Test case', 'Execution time'], $this->separator, escape: '\\');
+
+        fputcsv($file, ['Test case', 'Execution time (s)'], $this->separator, escape: '\\');
+
         foreach ($report->sortedDescending() as $id => $testTime) {
-            fputcsv(
-                $file,
-                [$id, sprintf('%0.4f s', $testTime->seconds)],
-                $this->separator,
-                escape: '\\',
-            );
+            fputcsv($file, [$id, sprintf('%0.4f', $testTime->seconds)], $this->separator, escape: '\\');
         }
-        $written = fclose($file);
-        if (false === $written) {
+
+        if (false === fclose($file)) {
             throw ReportWriteFailed::write($this->reportPath);
         }
+    }
+
+    /**
+     * Strip the ".csv" extension from the machine-readable log base.
+     */
+    #[Override]
+    protected function reportExtension(): string
+    {
+        return '.csv';
     }
 }

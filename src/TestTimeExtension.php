@@ -93,6 +93,7 @@ final class TestTimeExtension implements Extension
                 $token,
                 $settings->csvMinimumDuration,
                 $settings->csvCount,
+                $settings->csvSeparator,
             );
 
             $reportWriter->reset();

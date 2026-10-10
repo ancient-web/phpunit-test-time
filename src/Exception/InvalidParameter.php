@@ -34,4 +34,14 @@ final class InvalidParameter extends InvalidArgumentException
     {
         return new self(sprintf('The value "%s" of the parameter "%s" is not a non-negative integer.', $value, $name));
     }
+
+    /**
+     * The parameter is not an allowed CSV separator.
+     *
+     * @param string $value Parameter value
+     */
+    public static function notAnAllowedCsvSeparator(string $value): self
+    {
+        return new self(sprintf('The value "%s" is not an allowed CSV separator.', $value));
+    }
 }

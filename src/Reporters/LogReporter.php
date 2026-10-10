@@ -6,7 +6,9 @@ namespace AncientWeb\PhpUnitTestTime\Reporters;
 
 use AncientWeb\PhpUnitTestTime\Exception\ReportWriteFailed;
 use AncientWeb\PhpUnitTestTime\Report;
+use AncientWeb\PhpUnitTestTime\TestTime;
 use DateTimeImmutable;
+use Override;
 
 use function dirname;
 use function file_put_contents;
@@ -28,6 +30,12 @@ final readonly class LogReporter extends AbstractFileReporter
         parent::__construct($reportPath, $token);
     }
 
+    /**
+     * Write the human-readable report, filtered by the configured threshold and count.
+     *
+     * @param array<string, TestTime> $testTimes Test times keyed by test identifier
+     */
+    #[Override]
     protected function writeReport(array $testTimes): void
     {
         $report = Report::fromTestTimes($testTimes)
@@ -42,5 +50,14 @@ final readonly class LogReporter extends AbstractFileReporter
         if (false === file_put_contents($this->reportPath, $contents)) {
             throw ReportWriteFailed::write($this->reportPath);
         }
+    }
+
+    /**
+     * Strip the ".log" extension from the machine-readable log base.
+     */
+    #[Override]
+    protected function reportExtension(): string
+    {
+        return '.log';
     }
 }

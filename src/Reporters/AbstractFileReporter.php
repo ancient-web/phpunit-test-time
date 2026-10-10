@@ -29,6 +29,7 @@ use function preg_replace;
 use function scandir;
 use function str_ends_with;
 use function str_starts_with;
+use function strlen;
 use function substr;
 use function unlink;
 
@@ -192,6 +193,30 @@ abstract readonly class AbstractFileReporter implements Reporter
     abstract protected function writeReport(array $testTimes): void;
 
     /**
+     * Get the report extension that is stripped from the machine-readable log base.
+     *
+     * Deriving the base from the stripped extension keeps every reporter that
+     * writes next to another one (for example `test-time.log` and
+     * `test-time.csv`) in the same machine namespace, so they share the merged
+     * log instead of competing for each other's files.
+     */
+    abstract protected function reportExtension(): string;
+
+    /**
+     * Get the report base path without its extension.
+     */
+    protected function basePath(): string
+    {
+        $extension = $this->reportExtension();
+
+        if ('' !== $extension && str_ends_with($this->reportPath, $extension)) {
+            return substr($this->reportPath, 0, -strlen($extension));
+        }
+
+        return $this->reportPath;
+    }
+
+    /**
      * Merge all worker logs into the accumulator and render the shared report.
      */
     private function merge(): void
@@ -329,17 +354,5 @@ abstract readonly class AbstractFileReporter implements Reporter
     private function accumulatorPath(): string
     {
         return $this->basePath().'.json';
-    }
-
-    /**
-     * Get the report base path without extension.
-     */
-    private function basePath(): string
-    {
-        if (str_ends_with($this->reportPath, '.log')) {
-            return substr($this->reportPath, 0, -4);
-        }
-
-        return $this->reportPath;
     }
 }
