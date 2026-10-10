@@ -7,12 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-10-10
+
+### Added
+
+- An optional CSV report, controlled by the `csv`, `csv-file`, `csv-minimum-duration`,
+  `csv-count`, and `csv-separator` parameters; it is off by default.
+
 ### Changed
 
-- Coding standards are now enforced with Easy Coding Standard (ECS) instead of PHP-CS-Fixer; the
-  `composer cs` and `composer cs:check` scripts are unchanged.
 - The minimum supported PHP version is now 8.1 (the lowest supported by `phpunit/phpunit` 10); the
   code no longer requires PHP 8.2+ syntax.
+- The log and CSV reports that share a name stem (as the defaults do) share the merged machine log
+  instead of competing for each other's files.
+- Coding standards are now enforced with Easy Coding Standard (ECS) instead of PHP-CS-Fixer; the
+  `composer cs` and `composer cs:check` scripts are unchanged.
+
+### Fixed
+
+- The `csv-separator` parameter is now forwarded to the CSV reporter and validated.
+- CSV durations are written as plain numbers, with the unit in the header.
 
 ## [2.1.0] - 2026-10-09
 

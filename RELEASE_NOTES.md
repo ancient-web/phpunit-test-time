@@ -1,26 +1,44 @@
-## phpunit-test-time v2.1.0
+## phpunit-test-time v2.2.0
 
 A PHPUnit extension that measures the execution time of each test and, at the end of the run,
-reports the slowest ones. The console report is on by default; the file log is opt-in.
+reports the slowest ones. The console report is on by default; the file log and the new CSV report
+are opt-in.
 
-This release adjusts the default behavior and documents how the extension compares to the
-alternatives.
-
-### Changed
-
-- The console report shows at most the 10 slowest tests by default (`console-count` = `10`).
-- The file log is disabled by default; enable it with the `log` parameter.
-- The console report stays enabled by default with `console-minimum-duration` = `500` ms.
+This release adds a CSV report and widens the supported PHP range down to 8.1. The coding-standard
+tooling moved from PHP-CS-Fixer to ECS, but the `composer cs` and `composer cs:check` scripts are
+unchanged.
 
 ### Added
 
-- A [comparison with other extensions](https://github.com/ancient-web/phpunit-test-time#comparison-with-other-extensions)
-  (`ergebnis/phpunit-slow-test-detector` and `johnkary/phpunit-speedtrap`) in the README.
+- An optional CSV report, controlled by the `csv`, `csv-file`, `csv-minimum-duration`,
+  `csv-count`, and `csv-separator` parameters. It is off by default.
+
+### Changed
+
+- The minimum supported PHP version is now 8.1 (PHP 8.1 installs PHPUnit 10, 8.2 → 11, 8.3 → 12,
+  and 8.4+ → 13).
+- The log and CSV reports that share a name stem (as the defaults do) share the merged machine log.
+- Coding standards are enforced with Easy Coding Standard (ECS) instead of PHP-CS-Fixer.
+
+### Fixed
+
+- The `csv-separator` parameter is now forwarded to the CSV reporter and validated.
+- CSV durations are plain numbers; the unit lives in the header.
+
+### CSV report example
+
+```
+Test case;Execution time (s)
+App\Tests\SlowTest::testSomething;2.5000
+App\Tests\MediumTest::testSomething;1.5000
+App\Tests\FastTest::testSomething;0.5000
+```
 
 ### Features
 
 - Console report, enabled by default, showing only tests at or above `console-minimum-duration`.
 - Optional file log with its own threshold and count.
+- Optional CSV report with its own threshold, count, and separator.
 - `console-maximum-width` to truncate the console report to the terminal width (or `max`).
 - Per-test maximum duration via the `MaximumDuration` attribute and the `@maximumDuration` /
   `@slowThreshold` annotations; the per-test minimum survives the paratest merge.
@@ -37,43 +55,3 @@ Total tests: 3, total time: 4.5000 s
      2.     1.5000 s  App\Tests\MediumTest::testSomething
      3.     0.5000 s  App\Tests\FastTest::testSomething
 ```
-
-### Requirements
-
-- PHP `^8.4`
-- PHPUnit `^10.0 || ^11.0 || ^12.0 || ^13.0`
-- PHP extension: `mbstring` (PHPUnit pulls in `dom` and `xmlwriter`)
-
-### Installation
-
-```bash
-composer require --dev ancient-web/phpunit-test-time
-```
-
-### Registration
-
-```xml
-<extensions>
-    <bootstrap class="AncientWeb\PhpUnitTestTime\TestTimeExtension">
-        <parameter name="log" value="true" />
-        <parameter name="log-file" value="/tmp/test-time.log" />
-    </bootstrap>
-</extensions>
-```
-
-### Defaults
-
-| Parameter | Default |
-| --- | --- |
-| `console` | `true` |
-| `console-minimum-duration` | `500` |
-| `console-count` | `10` |
-| `console-maximum-width` | `0` |
-| `log` | `false` |
-| `log-file` | `var/test-time.log` |
-| `log-minimum-duration` | `0` |
-| `log-count` | `0` |
-
-### License
-
-MIT
